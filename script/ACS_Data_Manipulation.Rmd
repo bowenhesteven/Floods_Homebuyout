@@ -1,0 +1,1178 @@
+---
+title: "ACS_data_manipulation"
+author: "Bowen He"
+date: "11/21/2020"
+output: html_document
+---
+
+```{r acs-data-manipulation-setup, include=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidycensus)
+library(sf)
+library(dplyr)
+library(tidyverse)
+library(gt)
+
+if (!exists("ACS_census_tract_2010")) {
+  acs_census_tract_2010 <- read_rds(file.path(data_dir ="/Users/hebowen/Desktop/MarTREC_project/Data", "ACS_census_tract_2010.Rds"))
+}
+
+if (!exists("ACS_census_tract_2018")) {
+  acs_census_tract_2018 <- read_rds(file.path(data_dir ="/Users/hebowen/Desktop/MarTREC_project/Data", "ACS_census_tract_2018.Rds"))
+}
+```
+
+In this document, we integrate ACS data and calculate the social fabric index for each census tract for the year of 2010 and 2018.
+
+## Demographic Diversity (#demographic)
+
+Her we import the indicators ingredients ACS data associated with demographic diversity dimension, manipulated data and calculated.
+
+### Population (#pop)
+
+```{r pop, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+population_2010 <- acs_census_tract_2010$population_2010
+
+# calculate the mean and standard deviation of the population
+mean_pop_2010 <- mean(population_2010$estimate)
+std_pop_2010 <- sd(population_2010$estimate)
+
+# substitute missing population values with mean value
+population_2010$estimate[population_2010$estimate == 0] <- mean_pop_2010
+#----------------------------------------------------------------
+# year of 2018
+population_2018 <- acs_census_tract_2018$population_2018
+
+# calculate the mean and standard deviation of the population
+mean_pop_2018 <- mean(population_2018$estimate)
+std_pop_2018 <- sd(population_2018$estimate)
+
+# substitute missing population values with mean value
+population_2018$estimate[population_2018$estimate == 0] <- mean_pop_2018
+```
+
+
+### Population Density (#pop-density)
+
+```{r pop-density, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+# calculate the population density, unit = 1/mile^2
+pop_density_2010 <- population_2010 %>%
+  mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7) , pop_density = estimate / area_sqmile)
+
+# Calculate the mean and standard deviation of the population density
+mean_pop_density_2010 <- mean(pop_density_2010$pop_density)
+std_pop_density_2010 <- sd(pop_density_2010$pop_density)
+
+# Calculate the z score
+pop_density_2010 <- pop_density_2010 %>%
+  mutate(z = (pop_density - mean_pop_density_2010)/std_pop_density_2010)
+#-------------------------------------------------------------------
+# year of 2018
+# calculate the population density, unit = 1/mile^2
+pop_density_2018 <- population_2018 %>%
+  mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7) , pop_density = estimate / area_sqmile)
+
+# Calculate the mean and standard deviation of the population density
+mean_pop_density_2018 <- mean(pop_density_2018$pop_density)
+std_pop_density_2018 <- sd(pop_density_2018$pop_density)
+
+# Calculate the z score
+pop_density_2018 <- pop_density_2018 %>%
+  mutate(z = (pop_density - mean_pop_density_2018)/std_pop_density_2018)
+```
+
+### Percentage male population (#pct-male-pop)
+
+```{r pct-male-pop, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+male_pop_2010 <- acs_census_tract_2010$male_population_2010
+
+# calculate the mean and standard deviation of the male population
+mean_male_pop_2010 <- mean(male_pop_2010$estimate)
+std_male_pop_2010 <- sd(male_pop_2010$estimate)
+
+# substitute missing male population values with mean value
+male_pop_2010$estimate[male_pop_2010$estimate == 0] <- mean_male_pop_2010
+
+# calculate the male population percentage
+male_pop_pct_2010 <- male_pop_2010 %>%
+  right_join(st_drop_geometry(population_2010) %>% select("GEOID", total_pop = estimate), by = "GEOID") %>%
+  mutate(male_pop_pct = estimate/total_pop)
+
+# Calculate the mean and standard deviation of the male population density
+mean_male_pop_pct_2010 <- mean(male_pop_pct_2010$male_pop_pct)
+std_male_pop_pct_2010 <- sd(male_pop_pct_2010$male_pop_pct)
+
+# Calculate the z score
+male_pop_pct_2010 <- male_pop_pct_2010 %>%
+  mutate(z = (male_pop_pct - mean_male_pop_pct_2010)/std_male_pop_pct_2010)
+#---------------------------------------------------------------------------
+# year of 2018
+male_pop_2018 <- acs_census_tract_2018$male_population_2018
+
+# calculate the mean and standard deviation of the male population
+mean_male_pop_2018 <- mean(male_pop_2018$estimate)
+std_male_pop_2018 <- sd(male_pop_2018$estimate)
+
+# substitute missing male population values with mean value
+male_pop_2018$estimate[male_pop_2018$estimate == 0] <- mean_male_pop_2018
+
+# calculate the male population percentage
+male_pop_pct_2018 <- male_pop_2018 %>%
+  mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7) , male_pop_density = estimate / area_sqmile)
+
+# Calculate the mean and standard deviation of the male population density
+mean_male_pop_pct_2018 <- mean(male_pop_pct_2018$male_pop_density)
+std_male_pop_pct_2018 <- sd(male_pop_pct_2018$male_pop_density)
+
+# Calculate the z score
+male_pop_pct_2018 <- male_pop_pct_2018 %>%
+  mutate(z = (male_pop_density - mean_male_pop_pct_2018)/std_male_pop_pct_2018)
+```
+
+### Percentage female population (#pct-female-pop)
+
+```{r pct-female-pop, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+female_pop_2010 <- acs_census_tract_2010$female_population_2010
+
+# calculate the mean and standard deviation of the female population
+mean_female_pop_2010 <- mean(female_pop_2010$estimate)
+std_female_pop_2010 <- sd(female_pop_2010$estimate)
+
+# substitute missing female population values with mean value
+female_pop_2010$estimate[female_pop_2010$estimate == 0] <- mean_female_pop_2010
+
+# calculate the female population percentage
+female_pop_pct_2010 <- female_pop_2010 %>%
+  right_join(st_drop_geometry(population_2010) %>% select("GEOID", total_pop = estimate), by = "GEOID") %>%
+  mutate(female_pop_pct = estimate/total_pop)
+
+# calculate the mean and standard deviation of the female population density
+mean_female_pop_pct_2010 <- mean(female_pop_pct_2010$female_pop_pct)
+std_female_pop_pct_2010 <-sd(female_pop_pct_2010$female_pop_pct)
+
+# calculate the z score
+female_pop_pct_2010 <- female_pop_pct_2010 %>%
+  mutate(z = (female_pop_pct - mean_female_pop_pct_2010)/std_female_pop_pct_2010)
+#---------------------------------------------------------------------------------
+# year of 2018
+female_pop_2018 <- acs_census_tract_2018$female_population_2018
+
+# calculate the mean and standard deviation of the female population
+mean_female_pop_2018 <- mean(female_pop_2018$estimate)
+std_female_pop_2018 <- sd(female_pop_2018$estimate)
+
+# substitute missing female population values with mean value
+female_pop_2018$estimate[female_pop_2018$estimate == 0] <- mean_female_pop_2018
+
+# calculate the female population percentage
+female_pop_pct_2018 <- female_pop_2018 %>%
+  mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7) , female_pop_density = estimate / area_sqmile)
+
+
+# calculate the mean and standard deviation of the female population density
+mean_female_pop_pct_2018 <- mean(female_pop_pct_2018$female_pop_density)
+std_female_pop_pct_2018 <-sd(female_pop_pct_2018$female_pop_density)
+
+# calculate the z score
+female_pop_pct_2018 <- female_pop_pct_2018 %>%
+  mutate(z = (female_pop_density - mean_female_pop_pct_2018)/std_female_pop_pct_2018)
+```
+
+### Percentage of disability population (#pct-disability-pop)
+
+```{r pct-disable-pop, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+disable_pop_2012 <- acs_census_tract_2010$pop_disability_2012
+
+# calculate the disable population percentage
+disable_pop_pct_2012 <- disable_pop_2012 %>%
+  right_join(st_drop_geometry(population_2010) %>% select("GEOID", total_pop = estimate), by = "GEOID") %>%
+  mutate(disable_pop_pct = estimate/total_pop)
+
+# calculate the mean and standard deviation of the disability population
+mean_disable_pop_pct_2012 <- mean(disable_pop_pct_2012$disable_pop_pct)
+std_disable_pop_pct_2012 <- sd(disable_pop_pct_2012$disable_pop_pct)
+
+# calculate the z score
+disable_pop_pct_2012 <- disable_pop_pct_2012 %>%
+  mutate(z = (disable_pop_pct - mean_disable_pop_pct_2012)/std_disable_pop_pct_2012)
+#------------------------------------------------------------
+# year of 2018
+disable_pop_2018 <- acs_census_tract_2018$pop_disability_2018
+
+# calculate the disable population percentage
+disable_pop_pct_2018 <- disable_pop_2018 %>%
+   mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7) , disable_pop_density = estimate / area_sqmile)
+
+# calculate the mean and standard deviation of the disability population
+mean_disable_pop_pct_2018 <- mean(disable_pop_pct_2018$disable_pop_density)
+std_disable_pop_pct_2018 <- sd(disable_pop_pct_2018$disable_pop_density)
+
+# calculate the z score
+disable_pop_pct_2018 <- disable_pop_pct_2018 %>%
+  mutate(z = (disable_pop_density - mean_disable_pop_pct_2018)/std_disable_pop_pct_2018)
+```
+
+### Percentage of African American population (#pct-black)
+
+```{r pct-black, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+black_pop_2010 <- acs_census_tract_2010$african_american_2010
+
+# calculate the african american population percentage
+black_pop_pct_2010 <- black_pop_2010 %>%
+  right_join(st_drop_geometry(population_2010) %>% select("GEOID", total_pop = estimate), by = "GEOID") %>%
+  mutate(black_pop_pct = estimate/total_pop)
+
+# calculate the mean and standard deviation of the african american population
+mean_black_pop_pct_2010 <- mean(black_pop_pct_2010$black_pop_pct)
+std_black_pop_pct_2010 <- sd(black_pop_pct_2010$black_pop_pct)
+
+# calculate the z score
+black_pop_pct_2010 <- black_pop_pct_2010 %>%
+  mutate(z = (black_pop_pct - mean_black_pop_pct_2010)/std_black_pop_pct_2010)
+
+#---------------------------------------------------------------------
+# year of 2018
+black_pop_2018 <- acs_census_tract_2018$african_american_2018
+
+# calculate the african american population percentage
+black_pop_pct_2018 <- black_pop_2018 %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7) , black_pop_density = estimate / area_sqmile)
+
+# calculate the mean and standard deviation of the african american population
+mean_black_pop_pct_2018 <- mean(black_pop_pct_2018$black_pop_density)
+std_black_pop_pct_2018 <- sd(black_pop_pct_2018$black_pop_density)
+
+# calculate the z score
+black_pop_pct_2018 <- black_pop_pct_2018 %>%
+  mutate(z = (black_pop_density - mean_black_pop_pct_2018)/std_black_pop_pct_2018)
+```
+
+### Percentage of Hispanic Latino population (#pct-latino)
+
+```{r pct-latino, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+latino_pop_2010 <- acs_census_tract_2010$hispanic_2010
+
+# calculate the latino population percentage
+latino_pop_pct_2010 <- latino_pop_2010 %>%
+  right_join(st_drop_geometry(population_2010) %>% select("GEOID", total_pop = estimate), by = "GEOID") %>%
+  mutate(latino_pop_pct = estimate/total_pop)
+
+# calculate the mean and standard deviation of the latino population
+mean_latino_pop_pct_2010 <- mean(latino_pop_pct_2010$latino_pop_pct) 
+std_latino_pop_pct_2010 <- sd(latino_pop_pct_2010$latino_pop_pct)
+
+# calculate the z score
+latino_pop_pct_2010 <- latino_pop_pct_2010 %>%
+  mutate(z = (latino_pop_pct - mean_latino_pop_pct_2010)/std_latino_pop_pct_2010)
+
+#------------------------------------------------------------------
+# year of 2018
+latino_pop_2018 <- acs_census_tract_2018$hispanic_2018
+
+# calculate the latino population percentage
+latino_pop_pct_2018 <- latino_pop_2018 %>%
+  mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7) , latino_pop_density = estimate / area_sqmile)
+
+# calculate the mean and standard deviation of the latino population
+mean_latino_pop_pct_2018 <- mean(latino_pop_pct_2018$latino_pop_density) 
+std_latino_pop_pct_2018 <- sd(latino_pop_pct_2018$latino_pop_density)
+
+# calculate the z score
+latino_pop_pct_2018 <- latino_pop_pct_2018 %>%
+  mutate(z = (latino_pop_density - mean_latino_pop_pct_2018)/std_latino_pop_pct_2018)
+```
+
+### Percentage of White population (#pct-white)
+
+```{r pct-white, include=FALSE, message=FALSE, warning = FALSE}
+# year of 2010
+white_pop_2010 <- acs_census_tract_2010$white_only_2010
+
+# calculate the white population percentage
+white_pop_pct_2010 <- white_pop_2010 %>%
+  right_join(st_drop_geometry(population_2010) %>% select("GEOID", total_pop = estimate), by = "GEOID") %>%
+  mutate(white_pop_pct = estimate/total_pop)
+
+# calculate the mean and standard deviation of the white population
+mean_white_pop_pct_2010 <- mean(white_pop_pct_2010$white_pop_pct)
+std_white_pop_pct_2010 <- sd(white_pop_pct_2010$white_pop_pct)
+
+# calculate the z score
+white_pop_pct_2010 <- white_pop_pct_2010 %>%
+  mutate(z = (white_pop_pct - mean_white_pop_pct_2010)/std_white_pop_pct_2010)
+
+#---------------------------------------------------------------------
+# year of 2018
+white_pop_2018 <- acs_census_tract_2018$white_only_2018
+
+# calculate the white population percentage
+white_pop_pct_2018 <- white_pop_2018 %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), white_pop_density = estimate / area_sqmile)
+
+# calculate the mean and standard deviation of the white population
+mean_white_pop_pct_2018 <- mean(white_pop_pct_2018$white_pop_density)
+std_white_pop_pct_2018 <- sd(white_pop_pct_2018$white_pop_density)
+
+# calculate the z score
+white_pop_pct_2018 <- white_pop_pct_2018 %>%
+  mutate(z = (white_pop_density - mean_white_pop_pct_2018)/std_white_pop_pct_2018)
+```
+
+### Percentage of poverty population (#pct-poverty-pop)
+
+```{r pct-poverty, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+poverty_pop_2010 <- acs_census_tract_2010$poverty_2010
+
+# calculate the poverty population percentage
+poverty_pop_pct_2010 <- poverty_pop_2010 %>%
+  right_join(st_drop_geometry(population_2010) %>% select("GEOID", total_pop = estimate), by = "GEOID") %>%
+  mutate(poverty_pop_pct = estimate/total_pop)
+
+# calculate the mean and standard deviation of the poverty population
+mean_poverty_pop_pct_2010 <- mean(poverty_pop_pct_2010$poverty_pop_pct)
+std_poverty_pop_pct_2010 <- sd(poverty_pop_pct_2010$poverty_pop_pct)
+
+# calculate the z score
+poverty_pop_pct_2010 <- poverty_pop_pct_2010 %>%
+  mutate(z = (poverty_pop_pct - mean_poverty_pop_pct_2010)/std_poverty_pop_pct_2010)
+#-------------------------------------------------------------------------
+# year of 2018
+poverty_pop_2018 <- acs_census_tract_2018$poverty_2018
+
+# calculate the poverty population percentage
+poverty_pop_pct_2018 <- poverty_pop_2018 %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), poverty_pop_density = estimate / area_sqmile)
+
+# calculate the mean and standard deviation of the poverty population
+mean_poverty_pop_pct_2018 <- mean(poverty_pop_pct_2018$poverty_pop_density)
+std_poverty_pop_pct_2018 <- sd(poverty_pop_pct_2018$poverty_pop_density)
+
+# calculate the z score
+poverty_pop_pct_2018 <- poverty_pop_pct_2018 %>%
+  mutate(z = (poverty_pop_density - mean_poverty_pop_pct_2018)/std_poverty_pop_pct_2018)
+```
+
+### Percentage of limited education attainment (#pct-limit-education-attain)
+
+```{r pct-limit-education-attain, include=FALSE, message=FALSE, warning=FALSE}
+
+# year of 2010
+limit_education_attain_pop_2012 <- acs_census_tract_2010$limit_education_attain_2012
+
+# calculate the limit educational attainment population percentage
+limit_education_attain_pop_pct_2012 <- limit_education_attain_pop_2012 %>%
+  right_join(st_drop_geometry(population_2010) %>% select("GEOID", total_pop = estimate), by = "GEOID") %>%
+  mutate(limit_education_attain_pop_pct = estimate/total_pop)
+
+# calculate the mean and standard deviation of the limit educational attainment population
+mean_limit_education_attain_pop_pct_2012 <- mean(limit_education_attain_pop_pct_2012$limit_education_attain_pop_pct)
+std_limit_education_attain_pop_pct_2012 <- sd(limit_education_attain_pop_pct_2012$limit_education_attain_pop_pct)
+
+# calculate the z score
+limit_education_attain_pop_pct_2012 <- limit_education_attain_pop_pct_2012 %>%
+  mutate(z = (limit_education_attain_pop_pct - mean_limit_education_attain_pop_pct_2012)/std_limit_education_attain_pop_pct_2012)
+#-----------------------------------------------------------------------------------------------
+# year of 2018
+limit_education_attain_pop_2018 <- acs_census_tract_2018$limit_education_attain_2018
+
+# calculate the limit educational attainment population percentage
+limit_education_attain_pop_pct_2018 <- limit_education_attain_pop_2018 %>%
+  mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), limit_education_attain_pop_density = estimate / area_sqmile)
+
+# calculate the mean and standard deviation of the limit educational attainment population
+mean_limit_education_attain_pop_pct_2018 <- mean(limit_education_attain_pop_pct_2018$limit_education_attain_pop_density)
+std_limit_education_attain_pop_pct_2018 <- sd(limit_education_attain_pop_pct_2018$limit_education_attain_pop_density)
+
+# calculate the z score
+limit_education_attain_pop_pct_2018 <- limit_education_attain_pop_pct_2018 %>%
+  mutate(z = (limit_education_attain_pop_density - mean_limit_education_attain_pop_pct_2018)/std_limit_education_attain_pop_pct_2018)
+```
+
+
+## Family Composition (#family-composition)
+
+Here we manipulate and calculate variables associated with family composition dimension.
+
+### Total family with owned children (#family-owned-child)
+```{r family-owned-child, include=FALSE, message=FALSE, warning=FALSE}
+
+# year of 2010
+family_2010 <- acs_census_tract_2010$family_own_children_2010
+
+# calculate the mean and standard deviation of the family
+mean_family_2010 <- mean(family_2010$estimate)
+std_family_2010 <- sd(family_2010$estimate)
+
+# substitute missing family values with mean value
+family_2010$estimate[family_2010$estimate == 0] <- mean_family_2010
+#----------------------------------------------------------------------
+# year of 2018
+family_2018 <- acs_census_tract_2018$family_own_children_2018
+
+family_2018 <- family_2018 %>%
+  mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), family_density = estimate / area_sqmile)
+
+# calculate the mean and standard deviation of the family
+mean_family_2018 <- mean(family_2018$family_density)
+std_family_2018 <- sd(family_2018$family_density)
+
+# calculate the z score
+family_2018 <- family_2018 %>%
+  mutate(z = (family_density - mean_family_2018)/std_family_2018)
+```
+
+
+### Total household (#household)
+```{r household, include=FALSE, message=FALSE, warning=FALSE}
+
+# year of 2010
+household_2010 <- acs_census_tract_2010$total_household_2010
+
+# calculate the mean and standard deviation of the household
+mean_household_2010 <- mean(household_2010$estimate)
+std_household_2010 <- sd(household_2010$estimate)
+
+# substitute missing household values with mean value
+household_2010$estimate[household_2010$estimate == 0] <- mean_household_2010
+#-------------------------------------------------------------------------
+# year of 2018
+household_2018 <- acs_census_tract_2018$total_household_2018
+
+household_2018 <- household_2018 %>%
+  mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), household_density = estimate / area_sqmile)
+
+# calculate the mean and standard deviation of the household
+mean_household_2018 <- mean(household_2018$household_density)
+std_household_2018 <- sd(household_2018$household_density)
+
+household_2018 <- household_2018 %>%
+  mutate(z = ( household_density - mean_household_2018 )/std_household_2018)
+```
+
+### Total occupied housing units (#occupied-housing)
+```{r occupied-housing, include=FALSE, message=FALSE, warning=FALSE}
+
+# year of 2010
+occupied_housing_2010 <- acs_census_tract_2010$total_housing_units_2010
+
+# calculate the mean and standard deviation of the occupied housing
+mean_occupied_housing_2010 <- mean(occupied_housing_2010$estimate)
+std_occupied_housing_2010 <- sd(occupied_housing_2010$estimate)
+
+# substitute missing occupied housing units values with mean value
+occupied_housing_2010$estimate[occupied_housing_2010$estimate == 0] <- mean_occupied_housing_2010
+#----------------------------------------------------------------------------
+# year of 2018
+occupied_housing_2018 <- acs_census_tract_2018$total_housing_units_2018
+
+occupied_housing_2018 <- occupied_housing_2018 %>%
+  mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), occupied_housing_density = estimate / area_sqmile)
+
+# calculate the mean and standard deviation of the occupied housing
+mean_occupied_housing_2018 <- mean(occupied_housing_2018$occupied_housing_density)
+std_occupied_housing_2018 <- sd(occupied_housing_2018$occupied_housing_density)
+
+occupied_housing_2018 <- occupied_housing_2018 %>%
+  mutate(z = (occupied_housing_density - mean_occupied_housing_2018)/std_occupied_housing_2018)
+```
+
+### Percentage of single parent family (#pct-single-parent-family)
+```{r pct-single-parent-family, include=FALSE, message=FALSE, warning=FALSE}
+
+# year of 2010
+single_parent_family_2010 <- acs_census_tract_2010$single_parent_family_2010
+
+# calculate the percentage of single parent family
+single_parent_family_pct_2010 <- single_parent_family_2010 %>%
+  right_join(st_drop_geometry(family_2010) %>% select("GEOID", total_family = estimate), by = "GEOID") %>%
+  mutate(single_parent_family_pct = estimate/total_family)
+
+# calculate the mean and standard deviation of the single parent family
+mean_single_parent_family_pct_2010 <- mean(single_parent_family_pct_2010$single_parent_family_pct) 
+std_single_parent_family_pct_2010 <- sd(single_parent_family_pct_2010$single_parent_family_pct)
+
+# calculate the z score
+single_parent_family_pct_2010 <- single_parent_family_pct_2010 %>%
+  mutate(z = (single_parent_family_pct - mean_single_parent_family_pct_2010)/std_single_parent_family_pct_2010)
+#-------------------------------------------------------------------------------------
+# year of 2018
+single_parent_family_2018 <- acs_census_tract_2018$single_parent_family_2018
+
+# calculate the percentage of single parent family
+single_parent_family_pct_2018 <- single_parent_family_2018 %>%
+  mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), single_parent_family_density = estimate / area_sqmile)
+
+# calculate the mean and standard deviation of the single parent family
+mean_single_parent_family_pct_2018 <- mean(single_parent_family_pct_2018$single_parent_family_density) 
+std_single_parent_family_pct_2018 <- sd(single_parent_family_pct_2018$single_parent_family_density)
+
+# calculate the z score
+single_parent_family_pct_2018 <- single_parent_family_pct_2018 %>%
+  mutate(z = (single_parent_family_density - mean_single_parent_family_pct_2018)/std_single_parent_family_pct_2018)
+```
+
+### Percentage of single person household (#pct-single-person-household)
+```{r pct-single-person-household, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+single_person_household_2010 <- acs_census_tract_2010$single_person_household_2010
+
+# calculate the percentage of single person household
+single_person_household_pct_2010 <- single_person_household_2010 %>%
+  right_join(st_drop_geometry(household_2010) %>% select("GEOID", total_household = estimate), by = "GEOID") %>%
+  mutate(single_person_household_pct = estimate/total_household)
+
+# calculate the mean and standard deviation of the single person household
+mean_single_person_household_pct_2010 <- mean(single_person_household_pct_2010$single_person_household_pct)
+std_single_person_household_pct_2010 <- sd(single_person_household_pct_2010$single_person_household_pct)
+
+# calculate the z score
+single_person_household_pct_2010 <- single_person_household_pct_2010 %>%
+  mutate(z = (single_person_household_pct - mean_single_person_household_pct_2010)/std_single_person_household_pct_2010)
+#---------------------------------------------------------------------------------
+# year of 2018
+single_person_household_2018 <- acs_census_tract_2018$single_person_household_2018
+
+# calculate the percentage of single person household
+single_person_household_pct_2018 <- single_person_household_2018 %>%
+  mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), single_person_household_density = estimate / area_sqmile)
+
+# calculate the mean and standard deviation of the single person household
+mean_single_person_household_pct_2018 <- mean(single_person_household_pct_2018$single_person_household_density)
+std_single_person_household_pct_2018 <- sd(single_person_household_pct_2018$single_person_household_density)
+
+# calculate the z score
+single_person_household_pct_2018 <- single_person_household_pct_2018 %>%
+  mutate(z = (single_person_household_density - mean_single_person_household_pct_2018)/std_single_person_household_pct_2018)
+
+```
+
+### Percentage of household with seniors (#pct-senior-household)
+```{r pct-senior-household, include=FALSE, message = FALSE, warning=FALSE}
+# year of 2010
+household_senior_2010 <- acs_census_tract_2010$household_senior_2010
+
+# calculate the percentage of household with seniors
+household_senior_pct_2010 <- household_senior_2010 %>%
+  right_join(st_drop_geometry(household_2010) %>% select("GEOID", total_household = estimate), by = "GEOID") %>%
+  mutate(household_senior_pct = estimate/total_household)
+
+# calculate the mean and the standard deviation of the senior household
+mean_household_senior_pct_2010 <-mean(household_senior_pct_2010$household_senior_pct)
+std_household_senior_pct_2010 <- sd(household_senior_pct_2010$household_senior_pct)
+
+# calculate the z score
+household_senior_pct_2010 <- household_senior_pct_2010 %>%
+  mutate(z = (household_senior_pct - mean_household_senior_pct_2010)/std_household_senior_pct_2010)
+#---------------------------------------------------------------------
+# year of 2018
+household_senior_2018 <- acs_census_tract_2018$household_senior_2018
+
+# calculate the percentage of household with seniors
+household_senior_pct_2018 <- household_senior_2018 %>%
+  mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), household_senior_density = estimate / area_sqmile)
+
+# calculate the mean and the standard deviation of the senior household
+mean_household_senior_pct_2018 <-mean(household_senior_pct_2018$household_senior_density)
+std_household_senior_pct_2018 <- sd(household_senior_pct_2018$household_senior_density)
+
+# calculate the z score
+household_senior_pct_2018 <- household_senior_pct_2018 %>%
+  mutate(z = (household_senior_density - mean_household_senior_pct_2018)/std_household_senior_pct_2018)
+
+```
+
+### Percentage of multi-family housing (#pct-multifamily-house)
+```{r pct-multifamily-house, include = FALSE, message = FALSE, warning = FALSE}
+# year of 2010
+multifamily_house_2010 <- acs_census_tract_2010$multi_family_housing_2010
+
+# calculate the percentage of multifamily housing units
+multifamily_house_pct_2010 <- multifamily_house_2010 %>%
+  right_join(st_drop_geometry(occupied_housing_2010) %>% select("GEOID", total_housing = estimate), by = "GEOID") %>%
+  mutate(multifamily_house_pct = estimate/total_housing)
+
+# calculate the mean and standard deviation of the multifamily housing
+mean_multifamily_house_pct_2010 <- mean(multifamily_house_pct_2010$multifamily_house_pct)
+std_multifamily_house_pct_2010 <- sd(multifamily_house_pct_2010$multifamily_house_pct)
+
+# calculate the z score
+multifamily_house_pct_2010 <- multifamily_house_pct_2010 %>%
+  mutate(z = (multifamily_house_pct - mean_multifamily_house_pct_2010)/std_multifamily_house_pct_2010)
+#----------------------------------------------------------------------------
+# year of 2018
+multifamily_house_2018 <- acs_census_tract_2018$multi_family_housing_2018
+
+# calculate the percentage of multifamily housing units
+multifamily_house_pct_2018 <- multifamily_house_2018 %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), multifamily_house_density = estimate / area_sqmile)
+
+# calculate the mean and standard deviation of the multifamily housing
+mean_multifamily_house_pct_2018 <- mean(multifamily_house_pct_2018$multifamily_house_density)
+std_multifamily_house_pct_2018 <- sd(multifamily_house_pct_2018$multifamily_house_density)
+
+# calculate the z score
+multifamily_house_pct_2018 <- multifamily_house_pct_2018 %>%
+  mutate(z = (multifamily_house_density - mean_multifamily_house_pct_2018)/std_multifamily_house_pct_2018)
+```
+
+## Points of interests (#facility)
+
+Her we import the indicators ingredients points of interests data associated with facilities and amenities, manipulate data and calculate.
+
+### Fire Station (#fire-station)
+```{r fire-station,  include = FALSE, message = FALSE, warning = FALSE}
+census_tract <- acs_census_tract_2010$population_2010 %>% dplyr::select(-variable, -estimate, -moe) %>% rename('CT_NAME' = 'NAME')
+fire_station <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Emergency/Fire_Stations.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+fire_station_in_tract <- st_join(fire_station, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total =length(OBJECTID)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+ fire_station_in_tract[is.na(fire_station_in_tract)] <- 0
+ 
+ fire_station_in_tract <-  st_sf(fire_station_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), fire_station_in_tract_density = total / area_sqmile)
+ 
+ mean_fire_station_2018 <- mean(fire_station_in_tract$fire_station_in_tract_density)
+ std_fire_station_2018 <- sd(fire_station_in_tract$fire_station_in_tract_density)
+
+# calculate the z score
+ fire_station_in_tract_2018 <- fire_station_in_tract %>%
+  mutate(z = (fire_station_in_tract_density -  mean_fire_station_2018)/std_fire_station_2018)
+```
+
+### Grocery Stores (#grocery)
+```{r grocery, include=FALSE, message=FALSE, warning=FALSE}
+grocery_stores <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Grocery/Stores.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+grocery_stores_in_tract <- st_join(grocery_stores, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+grocery_stores_in_tract <- grocery_stores_in_tract %>% drop_na('GEOID') 
+grocery_stores_in_tract[is.na(grocery_stores_in_tract)] <- 0
+
+grocery_stores_in_tract <-  st_sf(grocery_stores_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), grocery_stores_in_tract_density = total / area_sqmile)
+ 
+ mean_grocery_stores_2018 <- mean(grocery_stores_in_tract$grocery_stores_in_tract_density)
+ std_grocery_stores_2018 <- sd(grocery_stores_in_tract$grocery_stores_in_tract_density)
+
+# calculate the z score
+ grocery_stores_in_tract_2018 <- grocery_stores_in_tract %>%
+  mutate(z = (grocery_stores_in_tract_density -  mean_grocery_stores_2018)/std_grocery_stores_2018)
+```
+
+### Super Market (#supermarket)
+```{r supermarket, include=FALSE, message=FALSE, warning=FALSE}
+supermarket <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Grocery/supermarket.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+supermarket_in_tract <- st_join(supermarket, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+supermarket_in_tract <- supermarket_in_tract %>% drop_na('GEOID') 
+supermarket_in_tract [is.na(supermarket_in_tract)] <- 0
+
+supermarket_in_tract <-  st_sf(supermarket_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), supermarket_in_tract_density = total / area_sqmile)
+
+ mean_supermarket_2018 <- mean(supermarket_in_tract$supermarket_in_tract_density)
+ std_supermarket_2018 <- sd(supermarket_in_tract$supermarket_in_tract_density)
+
+# calculate the z score
+supermarket_in_tract_2018 <-supermarket_in_tract %>%
+  mutate(z = (supermarket_in_tract_density -  mean_supermarket_2018)/std_supermarket_2018)
+```
+
+### Emergency Rooms (#emergency)
+```{r emergency, include=FALSE, message=FALSE, warning=FALSE}
+emergency <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Healthcare/Emergency Rooms.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+emergency_in_tract <- st_join(emergency, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+#emergency_in_tract <- emergency_in_tract %>% drop_na('GEOID') 
+emergency_in_tract [is.na(emergency_in_tract)] <- 0
+
+emergency_in_tract <-  st_sf(emergency_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), emergency_in_tract_density = total / area_sqmile)
+
+ mean_emergency_2018 <- mean(emergency_in_tract$emergency_in_tract_density)
+ std_emergency_2018 <- sd(emergency_in_tract$emergency_in_tract_density)
+
+# calculate the z score
+emergency_in_tract_2018 <-emergency_in_tract %>%
+  mutate(z = (emergency_in_tract_density -  mean_emergency_2018)/std_emergency_2018)
+```
+
+### Healthcare (#healthcare)
+```{r healthcare, include=FALSE, message=FALSE, warning=FALSE}
+healthcare <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Healthcare/Healthcare.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+healthcare_in_tract <- st_join(healthcare, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+healthcare_in_tract <- healthcare_in_tract %>% drop_na('GEOID') 
+healthcare_in_tract [is.na(healthcare_in_tract)] <- 0
+
+healthcare_in_tract <-  st_sf(healthcare_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), healthcare_in_tract_density = total / area_sqmile)
+
+
+ mean_healthcare_2018 <- mean(healthcare_in_tract$healthcare_in_tract_density)
+ std_healthcare_2018 <- sd(healthcare_in_tract$healthcare_in_tract_density)
+
+# calculate the z score
+healthcare_in_tract_2018 <- healthcare_in_tract %>%
+  mutate(z = (healthcare_in_tract_density -  mean_healthcare_2018)/std_healthcare_2018)
+```
+
+### Hospitals (#hospital)
+```{r hospital, include=FALSE, message=FALSE, warning=FALSE}
+hospital <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Healthcare/Hospitals.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+hospital_in_tract <- st_join(hospital, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(ID)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+#emergency_in_tract <- emergency_in_tract %>% drop_na('GEOID') 
+hospital_in_tract <-hospital_in_tract %>% drop_na('GEOID') 
+hospital_in_tract [is.na(hospital_in_tract)] <- 0
+
+hospital_in_tract <-  st_sf(hospital_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), hospital_in_tract_density = total / area_sqmile)
+
+ mean_hospital_2018 <- mean(hospital_in_tract$hospital_in_tract_density)
+ std_hospital_2018 <- sd(hospital_in_tract$hospital_in_tract_density)
+
+# calculate the z score
+hospital_in_tract_2018 <- hospital_in_tract %>%
+  mutate(z = (hospital_in_tract_density -  mean_hospital_2018)/std_hospital_2018)
+```
+
+### Denominations (#denominations)
+```{r denominations, include=FALSE, message=FALSE, warning=FALSE}
+denomination <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Religious/Denominations.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+denomination_in_tract <- st_join(denomination, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+denomination_in_tract <- denomination_in_tract %>% drop_na('GEOID') 
+denomination_in_tract [is.na(denomination_in_tract)] <- 0
+
+denomination_in_tract <-  st_sf(denomination_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), denomination_in_tract_density = total / area_sqmile)
+
+mean_denomination_2018 <- mean(denomination_in_tract$denomination_in_tract_density )
+std_denomination_2018 <- sd(denomination_in_tract$denomination_in_tract_density )
+
+# calculate the z score
+denomination_in_tract_2018 <- denomination_in_tract %>%
+  mutate(z = (denomination_in_tract_density -  mean_denomination_2018)/std_denomination_2018)
+
+```
+
+### Places Worship (#Worship)
+```{r worship, include=FALSE, message=FALSE, warning=FALSE}
+worship <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Religious/Places_of_Worship.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+worship_in_tract <- st_join(worship, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+worship_in_tract <- worship_in_tract %>% drop_na('GEOID') 
+worship_in_tract [is.na(worship_in_tract)] <- 0
+
+worship_in_tract <-  st_sf(worship_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), worship_in_tract_density = total / area_sqmile)
+
+mean_worship_2018 <- mean(worship_in_tract$worship_in_tract_density)
+std_worship_2018 <- sd(worship_in_tract$worship_in_tract_density)
+
+# calculate the z score
+worship_in_tract_2018 <- worship_in_tract %>%
+  mutate(z = (worship_in_tract_density -  mean_worship_2018)/std_worship_2018)
+```
+
+### Religion (#religion)
+```{r religion, include=FALSE, message=FALSE, warning=FALSE}
+religion <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Religious/Religion.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+religion_in_tract <- st_join(religion, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+religion_in_tract <- religion_in_tract %>% drop_na('GEOID') 
+religion_in_tract [is.na(religion_in_tract)] <- 0
+
+religion_in_tract <-  st_sf(religion_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), religion_in_tract_density = total / area_sqmile)
+
+mean_religion_2018 <- mean(religion_in_tract$religion_in_tract_density)
+std_religion_2018 <- sd(religion_in_tract$religion_in_tract_density)
+
+# calculate the z score
+religion_in_tract_2018 <-religion_in_tract %>%
+  mutate(z = (religion_in_tract_density -  mean_religion_2018)/std_religion_2018)
+```
+
+### College (#college)
+```{r college, include=FALSE, message=FALSE, warning=FALSE}
+college <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/College.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+college_in_tract <- st_join(college, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+college_in_tract  <- college_in_tract  %>% drop_na('GEOID') 
+college_in_tract  [is.na(college_in_tract)] <- 0
+
+college_in_tract <-  st_sf(college_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), college_in_tract_density = total / area_sqmile)
+
+mean_college_2018 <- mean(college_in_tract$college_in_tract_density)
+std_college_2018 <- sd(college_in_tract$college_in_tract_density)
+
+# calculate the z score
+college_in_tract_2018 <- college_in_tract %>%
+  mutate(z = (college_in_tract_density -  mean_college_2018)/std_college_2018)
+```
+
+### kindergarten (#kindergarten)
+```{r kindergarten, include=FALSE, message=FALSE, warning=FALSE}
+kindergarten <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/kindergarten.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+kindergarten_in_tract <- st_join(kindergarten, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+kindergarten_in_tract  <- kindergarten_in_tract  %>% drop_na('GEOID') 
+kindergarten_in_tract [is.na(kindergarten_in_tract)] <- 0
+
+kindergarten_in_tract <-  st_sf(kindergarten_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), kindergarten_in_tract_density = total / area_sqmile)
+
+mean_kindergarten_2018 <- mean(kindergarten_in_tract$kindergarten_in_tract_density)
+std_kindergarten_2018 <- sd(kindergarten_in_tract$kindergarten_in_tract_density)
+
+# calculate the z score
+kindergarten_in_tract_2018 <- kindergarten_in_tract %>%
+  mutate(z = (kindergarten_in_tract_density -  mean_kindergarten_2018)/std_kindergarten_2018)
+```
+
+### libraries (#libraries)
+```{r libraries, include=FALSE, message=FALSE, warning=FALSE}
+libraries <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/Libraries.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+libraries_in_tract <- st_join(libraries, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+libraries_in_tract  <- libraries_in_tract  %>% drop_na('GEOID') 
+libraries_in_tract [is.na(libraries_in_tract)] <- 0
+
+libraries_in_tract <-  st_sf(libraries_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), libraries_in_tract_density = total / area_sqmile)
+
+mean_libraries_2018 <- mean(libraries_in_tract$libraries_in_tract_density)
+std_libraries_2018 <- sd(libraries_in_tract$libraries_in_tract_density)
+
+# calculate the z score
+libraries_in_tract_2018 <-libraries_in_tract %>%
+  mutate(z = (libraries_in_tract_density -  mean_libraries_2018)/std_libraries_2018)
+```
+
+### private school (#private-schools)
+```{r public, include=FALSE, message=FALSE, warning=FALSE}
+private <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/private_schools.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+private_in_tract <- st_join(private, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+private_in_tract  <- private_in_tract  %>% drop_na('GEOID') 
+private_in_tract [is.na(private_in_tract)] <- 0
+
+private_in_tract <-  st_sf(private_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), private_in_tract_density = total / area_sqmile)
+
+mean_private_2018 <- mean(private_in_tract$private_in_tract_density)
+std_private_2018 <- sd(private_in_tract$private_in_tract_density)
+
+# calculate the z score
+private_in_tract_2018 <- private_in_tract %>%
+  mutate(z = (private_in_tract_density -  mean_private_2018)/std_private_2018)
+```
+
+
+### public school (#public-schools)
+```{r public, include=FALSE, message=FALSE, warning=FALSE}
+public <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/Nashville_Public.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+public_in_tract <- st_join(public, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(X1)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+public_in_tract  <-public_in_tract  %>% drop_na('GEOID') 
+public_in_tract [is.na(public_in_tract)] <- 0
+
+public_in_tract <-  st_sf(public_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), public_in_tract_density = total / area_sqmile)
+
+mean_public_2018 <- mean(public_in_tract$public_in_tract_density)
+std_public_2018 <- sd(public_in_tract$public_in_tract_density)
+
+# calculate the z score
+public_in_tract_2018 <- public_in_tract %>%
+  mutate(z = (public_in_tract_density -  mean_public_2018)/std_public_2018)
+```
+
+### school (# school)
+```{r school, include=FALSE, message=FALSE, warning=FALSE}
+school <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/School.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+school_in_tract <- st_join(school, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+school_in_tract  <-school_in_tract  %>% drop_na('GEOID') 
+school_in_tract [is.na(school_in_tract)] <- 0
+
+school_in_tract <-  st_sf(school_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), school_in_tract_density = total / area_sqmile)
+
+mean_school_2018 <- mean(school_in_tract$school_in_tract_density)
+std_school_2018 <- sd(school_in_tract$school_in_tract_density)
+
+# calculate the z score
+school_in_tract_2018 <- school_in_tract %>%
+  mutate(z = (school_in_tract_density -  mean_school_2018)/std_school_2018)
+```
+
+### University (#university)
+```{r university, include=FALSE, message=FALSE, warning=FALSE}
+university <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/University.shp') %>% st_as_sf() %>% st_transform(st_crs(census_tract))
+
+university_in_tract <- st_join(university, census_tract, join = st_within) %>%
+  group_by(GEOID) %>% summarise (total = length(osm_id)) %>% st_drop_geometry() %>%
+  full_join(census_tract, by = 'GEOID')
+
+university_in_tract  <-university_in_tract  %>% drop_na('GEOID') 
+university_in_tract [is.na(university_in_tract)] <- 0
+
+university_in_tract <-  st_sf(university_in_tract) %>%
+ mutate(area = st_area(.), area_sqmile = as.numeric(area * 3.86102e-7), university_in_tract_density = total / area_sqmile)
+
+mean_university_2018 <- mean(university_in_tract$university_in_tract_density)
+std_university_2018 <- sd(university_in_tract$university_in_tract_density)
+
+# calculate the z score
+university_in_tract_2018 <- university_in_tract %>%
+  mutate(z = (university_in_tract_density -  mean_university_2018)/std_university_2018)
+```
+
+
+## Build the variables dataframe (#build-df)
+
+Here, we incorporate all the variables and build the dataframe which contains all the variable's z score, geometry information in one dataframe, preparing for principal component analysis. Variables information are sourced from those listed dataframes: (1) pop_density; (2) male_pop_pct; (3) female_pop_pct; (4) disable_pop_pct; (5) black_pop_pct; (6) latino_pop_pct; (7) white_pop_pct; (8) poverty_pop_pct; (9) limit_education_attain_pop_pct; (10) family with children; (11) total housing units; (12) total households; (13) single_parent_family_pct; (14) single_person_household_pct; (15) household_senior_pct; (16) multifamily_house_pct
+
+Also, we incorporate points of interest data:
+(1) fire station; (2) Grocery Stores; (3) Supermarket; (4) Emergency Rooms; (5) Healthcare; (6) Hospitals; (7) Denominations; (8) Places Worship; (9) Religion; (10) College; (11) kindergarten; (12) libraries; (13)  public school; (14) private school; (15) school; (16) University
+
+```{r build-variable-df, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+variable_df_2010 <- pop_density_2010 %>%
+  select("GEOID", "NAME", z_pop_density = z) %>%
+  right_join(st_drop_geometry(male_pop_pct_2010) %>% select("GEOID", z_male_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(female_pop_pct_2010) %>% select("GEOID", z_female_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(disable_pop_pct_2012) %>% select("GEOID", z_disable_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(black_pop_pct_2010) %>% select("GEOID", z_black_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(latino_pop_pct_2010) %>% select("GEOID", z_latino_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(white_pop_pct_2010) %>% select("GEOID", z_white_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(poverty_pop_pct_2010) %>% select("GEOID", z_poverty_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(limit_education_attain_pop_pct_2012) %>% select("GEOID", z_limit_education_attain_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(single_parent_family_pct_2010) %>% select("GEOID", z_single_parent_family_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(single_person_household_pct_2010) %>% select("GEOID", z_single_person_household_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(household_senior_pct_2010) %>% select("GEOID", z_household_senior_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(multifamily_house_pct_2010) %>% select("GEOID", z_multifamily_house_pct = z), by = "GEOID")
+#-------------------------------------------------------------------------------
+# year of 2018
+
+variable_df_2018 <- pop_density_2018 %>% dplyr::select("GEOID", "NAME", z_pop_density = z) %>%
+  right_join(st_drop_geometry(male_pop_pct_2018) %>% dplyr::select("GEOID", z_male_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(female_pop_pct_2018) %>% dplyr::select("GEOID", z_female_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(disable_pop_pct_2018) %>% dplyr::select("GEOID", z_disable_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(black_pop_pct_2018) %>% dplyr::select("GEOID", z_black_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(latino_pop_pct_2018) %>% dplyr::select("GEOID", z_latino_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(white_pop_pct_2018) %>% dplyr::select("GEOID", z_white_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(poverty_pop_pct_2018) %>% dplyr::select("GEOID", z_poverty_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(limit_education_attain_pop_pct_2018) %>% dplyr::select("GEOID", z_limit_education_attain_pop_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(family_2018) %>% dplyr::select("GEOID", z_family_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(household_2018) %>% dplyr::select("GEOID", z_household_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(occupied_housing_2018) %>% dplyr::select("GEOID", z_occupied_housing_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(single_parent_family_pct_2018) %>% dplyr::select("GEOID", z_single_parent_family_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(single_person_household_pct_2018) %>% dplyr::select("GEOID", z_single_person_household_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(household_senior_pct_2018) %>% dplyr::select("GEOID", z_household_senior_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(multifamily_house_pct_2018) %>% dplyr::select("GEOID", z_multifamily_house_pct = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(fire_station_in_tract_2018) %>% dplyr::select("GEOID", z_fire_station = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(grocery_stores_in_tract_2018) %>% dplyr::select("GEOID", z_grocery_stores = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(supermarket_in_tract_2018) %>% dplyr::select("GEOID", z_supermarket = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(emergency_in_tract_2018) %>% dplyr::select("GEOID", z_emergency = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(healthcare_in_tract_2018) %>% dplyr::select("GEOID", z_healthcare = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(hospital_in_tract_2018) %>% dplyr::select("GEOID", z_hospital = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(denomination_in_tract_2018) %>% dplyr::select("GEOID", z_denomination = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(worship_in_tract_2018) %>% dplyr::select("GEOID", z_worship = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(religion_in_tract_2018) %>% dplyr::select("GEOID", z_religion = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(college_in_tract_2018) %>% dplyr::select("GEOID", z_college = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(kindergarten_in_tract_2018) %>% dplyr::select("GEOID", z_kindergarten = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(libraries_in_tract_2018) %>% dplyr::select("GEOID", z_libraries = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(private_in_tract_2018) %>% dplyr::select("GEOID", z_public = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(public_in_tract_2018) %>% dplyr::select("GEOID", z_public = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(school_in_tract_2018) %>% dplyr::select("GEOID", z_school = z), by = "GEOID") %>%
+  right_join(st_drop_geometry(university_in_tract_2018) %>% dplyr::select("GEOID", z_university = z), by = "GEOID")
+  
+```
+
+## Perform the principal component analysis (#pca)
+
+Here, based on the variables dataframe, the principal component analysis (PCA) is performed to reduce the dimension of the variables dataframe. Kaiser criterion is used for component selection, and this can be aided by the examination of a scree plot.
+```{r pca, include=FALSE, message=FALSE, warning=FALSE}
+
+# year of 2010
+variable_pca_2010 <- prcomp(st_drop_geometry(variable_df_2010) %>% select(-"GEOID", -"NAME") , center = TRUE, scale. = TRUE) 
+summary(variable_pca_2010)
+
+# year of 2018
+variable_pca_2018 <- prcomp(st_drop_geometry(variable_df_2018) %>% dplyr::select(-"GEOID", -"NAME") , center = TRUE, scale. = TRUE) 
+summary(variable_pca_2018)
+
+# plot the PCA chart
+# screeplot(variable_pca, npcs = length(variable_pca$sdev), type = "lines")
+
+pcaCharts <- function(x) {
+    x.var <- x$sdev ^ 2
+    x.pvar <- x.var/sum(x.var)
+    print("proportions of variance:")
+    print(x.pvar)
+    
+    par(mfrow=c(2,2))
+    plot(x.pvar,xlab="Principal component", ylab="Proportion of variance explained", ylim=c(0,1), type='b')
+    plot(cumsum(x.pvar),xlab="Principal component", ylab="Cumulative Proportion of variance explained", ylim=c(0,1), type='b')
+    screeplot(x)
+    screeplot(x,type="l")
+    par(mfrow=c(1,1))
+}
+
+
+# year of 2010
+pcaCharts(variable_pca_2010)
+
+# year of 2018
+pcaCharts(variable_pca_2018)
+
+# Plot the biplot
+
+library(devtools)
+install_github("vqv/ggbiplot")
+library(ggbiplot)
+
+# year of 2010
+ggbiplot(variable_pca_2010)
+
+# year of 2018
+ggbiplot(variable_pca_2018)
+
+```
+
+
+## Calculate the social fabric scores (#calc-score)
+
+Here, we calculate the social fabric scores based on the previous results of principal component analysis. For example, we choose the first 4 components to calculate the social fabric score.
+
+```{r calc-score, include=FALSE, message=FALSE, warning=FALSE}
+# Year of 2010
+variable_df_pca_2010 <- st_drop_geometry(variable_df_2010) %>% select("GEOID", "NAME") %>%
+ cbind(data.frame(variable_pca_2010$x) %>% select(PC1, PC2, PC3, PC4))
+
+pca_component_loading_2010 <- data.frame(variable_pca_2010$rotation) %>%
+  rownames_to_column("variable")
+
+# show the component loadings table
+pca_component_loading_2010 %>%
+gt() %>%
+  tab_header(title =md ("**Component Loadings**")) %>%
+  cols_label(variable = md("**Variable**"),PC1 = md("**PC1**"), PC2 = md("**PC2**"),  PC3 = md("**PC3**"), PC4 = md("**PC4**"), PC5 = md("**PC5**"), PC6 = md("**PC6**"), PC7 =  md("**PC7**"), PC8 = md("**PC8**"), PC9 =  md("**PC9**"), PC10 = md("**PC10**"), PC11 = md("**PC11**"), PC12 = md("**PC12**"), PC13 = md("**PC13**"))
+#-------------------------------------------------------------------------------------------------------
+# year of 2018
+variable_df_pca_2018 <- st_drop_geometry(variable_df_2018) %>% dplyr::select("GEOID", "NAME") %>%
+ cbind(data.frame(variable_pca_2018$x) %>% dplyr::select(PC1, PC2, PC3, PC4))
+
+pca_component_loading_2018 <- data.frame(variable_pca_2018$rotation) %>%
+  rownames_to_column("variable")
+
+# show the component loadings table
+pca_component_loading_2018 %>%
+gt() %>%
+  tab_header(title =md ("**Component Loadings**")) %>%
+  cols_label(variable = md("**Variable**"),PC1 = md("**PC1**"), PC2 = md("**PC2**"),  PC3 = md("**PC3**"), PC4 = md("**PC4**"), PC5 = md("**PC5**"), PC6 = md("**PC6**"), PC7 =  md("**PC7**"), PC8 = md("**PC8**"), PC9 =  md("**PC9**"), PC10 = md("**PC10**"), PC11 = md("**PC11**"), PC12 = md("**PC12**"), PC13 = md("**PC13**"))
+```
+
+### Mapping the social fabric score/index (#map-score)
+
+score = -PC1 + PC2 - PC3 + PC4
+```{r map-score-2010, include=FALSE, message=FALSE, warning=FALSE}
+
+variable_df_pca_2010 <- variable_df_pca_2010 %>%
+  mutate(score = -PC1 + PC2 - PC3 + PC4) %>%
+  right_join(variable_df%>%select("GEOID", "NAME"))
+
+p <- ggplot(variable_df_pca_2010, aes(fill = score, geometry = geometry)) + geom_sf(color = NA) + scale_fill_viridis_c(option = "B") +
+  ggtitle('Social Fabric Score (2010 census tract)')
+p + theme(plot.title = element_text(color="black", size=20, face="bold", hjust = 0.5))
+
+
+```
+
+score = PC1 + PC2 + PC3 + PC4
+```{r map-score-2018, include=FALSE, message=FALSE, warning=FALSE}
+
+variable_df_pca_2018 <- variable_df_pca_2018 %>%
+  mutate(score = PC1 + PC2 + PC3 + PC4) %>%
+  right_join(variable_df_2018 %>% dplyr::select("GEOID", "NAME"))
+
+p <- ggplot(variable_df_pca_2018, aes(fill = score, geometry = geometry)) + geom_sf(color = NA) + scale_fill_viridis_c(option = "A") +
+  ggtitle('Social Fabric Score (2018 census tract)')
+p + theme(plot.title = element_text(color="black", size=20, face="bold", hjust = 0.5))
+```
+
+
+```{r save-output, include=FALSE, message=FALSE, warning=FALSE}
+# Export the shapefile
+library(rgdal)
+# year of 2010 sfs shapefile
+st_write(variable_df_pca_2010, dsn = "/Users/hebowen/Desktop/MarTREC-project/Data/2010_tract/sfs", layer = "2010_tract_sfs",
+         driver = "ESRI Shapefile", append = FALSE)
+
+# year of 2018 sfs shapefile
+st_write(variable_df_pca_2018, dsn = "/Users/hebowen/Desktop/MarTREC_project/Data/2018_Data/2018_tract/sfs", layer = "2018_tract_sfs",
+         driver = "ESRI Shapefile", append = FALSE)
+
+# export/output the Rds data
+ write_rds(list(variable_df_pca_2010 = variable_df_pca_2010, variable_df_pca_2018 = variable_df_pca_2018),
+            path = file.path(data_dir ="/Users/hebowen/Desktop/MarTREC-project/Data", "tract_sfs.Rds"))
+```
+
+

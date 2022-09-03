@@ -1,0 +1,1426 @@
+---
+title: "ACS_data_manipulation-NLCD-Dasymetric"
+author: "Bowen He"
+date: "11/21/2020"
+output: html_document
+---
+
+```{r acs-data-manipulation-setup, include=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidycensus)
+library(sf)
+library(dplyr)
+library(tidyverse)
+library(gt)
+library(tiff)
+library(raster)
+
+setwd("/Users/hebowen/Desktop/MarTREC_project/Data")
+```
+
+In this document, we integrate ACS data and calculate the social fabric index for each census tract for the year of 2010 and 2018.
+
+## Demographic Diversity (#demographic)
+
+Her we import the indicators ingredients ACS data associated with demographic diversity dimension, manipulated data and calculated.
+
+### The year of 2010 (#2010)
+#### Population (#pop-2010)
+
+```{r pop-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+setwd("~/Desktop/MarTREC_project/Data/2010_Data/2010_NLCD_summary")
+population_2010 <- raster::raster('population-2010.tif')
+plot(population_2010)
+# calculate the mean and standard deviation of the population
+population_2010_df <- as.data.frame(population_2010, xy = TRUE)
+mean_pop_2010 <- mean(population_2010_df$`population-2010`, na.rm = TRUE)
+std_pop_2010 <- sd(population_2010_df$`population-2010`, na.rm = TRUE)
+population_2010_df <- population_2010_df %>%
+  mutate(z_pop_2010 = (`population-2010` - mean_pop_2010)/std_pop_2010)
+```
+
+#### African American (#african-american-2010)
+```{r african-american-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+setwd("~/Desktop/MarTREC_project/Data/2010_Data/2010_NLCD_summary")
+african_american_2010 <- raster::raster('african-american-2010.tif')
+plot(african_american_2010)
+# calculate the mean and standard deviation of the population
+african_american_2010_df <- as.data.frame(african_american_2010, xy = TRUE)
+mean_african_american_2010 <- mean(african_american_2010_df$african.american.2010, na.rm = TRUE)
+std_african_american_2010 <- sd(african_american_2010_df$african.american.2010, na.rm = TRUE)
+african_american_2010_df <- african_american_2010_df %>%
+  mutate(z_african_american_2010 = (african.american.2010 - mean_african_american_2010)/std_african_american_2010)
+```
+
+#### Disable Population (#disable-pop-2010)
+```{r disable-pop-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+disable_pop_2010 <- raster('disable-population-2010.tif')
+plot(disable_pop_2010)
+# calculate the mean and standard deviation of the population
+disable_pop_2010_df <- as.data.frame(disable_pop_2010, xy = TRUE)
+mean_disable_pop_2010 <- mean(disable_pop_2010_df$disable.population.2010, na.rm = TRUE)
+std_disable_pop_2010 <- sd(disable_pop_2010_df$disable.population.2010, na.rm = TRUE)
+disable_pop_2010_df <-disable_pop_2010_df %>%
+  mutate(z_disable_pop_2010 = (disable.population.2010 - mean_disable_pop_2010)/std_disable_pop_2010)
+```
+
+#### Family Own Children (#family-own-children-2010)
+
+```{r family-own-children-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+family_own_children_2010 <- raster('family-own-children-2010.tif')
+plot(family_own_children_2010)
+# calculate the mean and standard deviation of the population
+family_own_children_2010_df <- as.data.frame(family_own_children_2010, xy = TRUE)
+mean_family_own_children_2010 <- mean(family_own_children_2010_df$family.own.children.2010, na.rm = TRUE)
+std_family_own_children_2010 <- sd(family_own_children_2010_df$family.own.children.2010, na.rm = TRUE)
+family_own_children_2010_df <-family_own_children_2010_df %>%
+  mutate(z_family_own_children_2010 = (family.own.children.2010 - mean_family_own_children_2010)/std_family_own_children_2010)
+```
+
+
+#### Female population (#female-pop-2010)
+
+```{r female-pop-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+female_pop_2010 <- raster('female-population-2010.tif')
+plot(female_pop_2010)
+# calculate the mean and standard deviation of the population
+female_pop_2010_df <- as.data.frame(female_pop_2010, xy = TRUE)
+mean_female_pop_2010 <- mean(female_pop_2010_df$female.population.2010, na.rm = TRUE)
+std_female_pop_2010 <- sd(female_pop_2010_df$female.population.2010, na.rm = TRUE)
+female_pop_2010_df <-female_pop_2010_df %>%
+  mutate(z_female_pop_2010 = (female.population.2010 - mean_female_pop_2010)/std_female_pop_2010)
+```
+
+#### Hispanic (#hispanic-2010)
+```{r hispanic-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+hispanic_2010 <- raster('hispanic-2010.tif')
+plot(hispanic_2010)
+# calculate the mean and standard deviation of the population
+hispanic_2010_df <- as.data.frame(hispanic_2010, xy = TRUE)
+mean_hispanic_2010<- mean(hispanic_2010_df$hispanic.2010, na.rm = TRUE)
+std_hispanic_2010 <- sd(hispanic_2010_df$hispanic.2010, na.rm = TRUE)
+hispanic_2010_df <-hispanic_2010_df %>%
+  mutate(z_hispanic_2010 = (hispanic.2010 - mean_hispanic_2010)/std_hispanic_2010)
+```
+
+#### Household senior (#household-senior-2010)
+```{r household-senior-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+household_senior_2010 <- raster('household-senior-2010.tif')
+plot(household_senior_2010)
+# calculate the mean and standard deviation of the population
+household_senior_2010_df <- as.data.frame(household_senior_2010, xy = TRUE)
+mean_household_senior_2010<- mean(household_senior_2010_df$household.senior.2010, na.rm = TRUE)
+std_household_senior_2010 <- sd(household_senior_2010_df$household.senior.2010, na.rm = TRUE)
+household_senior_2010_df <- household_senior_2010_df %>%
+  mutate(z_household_senior_2010 = (household.senior.2010 - mean_household_senior_2010)/std_household_senior_2010)
+```
+
+#### Limit Education Attain (#limit-education-attain-2010)
+```{r limit-education-attain-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+limit_education_attain_2010 <- raster('limit-education-attain-2010.tif')
+plot(limit_education_attain_2010 )
+# calculate the mean and standard deviation of the population
+limit_education_attain_2010_df <- as.data.frame(limit_education_attain_2010, xy = TRUE)
+mean_limit_education_attain_2010<- mean(limit_education_attain_2010_df$limit.education.attain.2010, na.rm = TRUE)
+std_limit_education_attain_2010 <- sd(limit_education_attain_2010_df$limit.education.attain.2010, na.rm = TRUE)
+limit_education_attain_2010_df <- limit_education_attain_2010_df %>%
+  mutate(z_limit_education_attain_2010 = (limit.education.attain.2010 - mean_limit_education_attain_2010)/std_limit_education_attain_2010)
+```
+
+#### Male Population (#male-pop-2010)
+```{r male-pop-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+male_pop_2010 <- raster('male-population-2010.tif')
+plot(male_pop_2010 )
+# calculate the mean and standard deviation of the population
+male_pop_2010_df <- as.data.frame(male_pop_2010, xy = TRUE)
+mean_male_pop_2010<- mean(male_pop_2010_df$male.population.2010, na.rm = TRUE)
+std_male_pop_2010 <- sd(male_pop_2010_df$male.population.2010, na.rm = TRUE)
+male_pop_2010_df <- male_pop_2010_df %>%
+  mutate(z_male_pop_2010 = (male.population.2010 - mean_male_pop_2010)/std_male_pop_2010)
+```
+
+
+#### Multi-family Housing (#multifamily-2010)
+```{r male-pop-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+multifamily_housing_2010 <- raster('multi-family-housing-2010.tif')
+plot(multifamily_housing_2010)
+# calculate the mean and standard deviation of the population
+multifamily_housing_2010_df <- as.data.frame(multifamily_housing_2010, xy = TRUE)
+mean_multifamily_housing_2010<- mean(multifamily_housing_2010_df$multi.family.housing.2010, na.rm = TRUE)
+std_multifamily_housing_2010 <- sd(multifamily_housing_2010_df$multi.family.housing.2010, na.rm = TRUE)
+multifamily_housing_2010_df <- multifamily_housing_2010_df %>%
+  mutate(z_multifamily_housing_2010 = (multi.family.housing.2010 - mean_multifamily_housing_2010)/std_multifamily_housing_2010)
+```
+
+#### Poverty (#poverty-2010)
+
+```{r poverty-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+poverty_2010 <- raster('poverty-2010.tif')
+plot(poverty_2010)
+# calculate the mean and standard deviation of the population
+poverty_2010_df <- as.data.frame(poverty_2010, xy = TRUE)
+mean_poverty_2010<- mean(poverty_2010_df$poverty.2010, na.rm = TRUE)
+std_poverty_2010 <- sd(poverty_2010_df$poverty.2010, na.rm = TRUE)
+poverty_2010_df <- poverty_2010_df %>%
+  mutate(z_poverty_2010 = (poverty.2010 - mean_poverty_2010)/std_poverty_2010)
+```
+
+#### Single-parent Family 2010 (#single-parent-family-2010)
+```{r poverty-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+single_parent_family_2010 <- raster('single-parent-family-2010.tif')
+plot(single_parent_family_2010)
+# calculate the mean and standard deviation of the population
+single_parent_family_2010_df <- as.data.frame(single_parent_family_2010, xy = TRUE)
+mean_single_parent_family_2010<- mean(single_parent_family_2010_df$single.parent.family.2010, na.rm = TRUE)
+std_single_parent_family_2010 <- sd(single_parent_family_2010_df$single.parent.family.2010, na.rm = TRUE)
+single_parent_family_2010_df <- single_parent_family_2010_df %>%
+  mutate(z_single_parent_family_2010 = (single.parent.family.2010 - mean_single_parent_family_2010)/std_single_parent_family_2010)
+```
+
+#### Single-person Household (#single-person-household-2010)
+```{r single-person-household-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+single_person_household_2010 <- raster('single-person-household-2010.tif')
+plot(single_person_household_2010)
+# calculate the mean and standard deviation of the population
+single_person_household_2010_df <- as.data.frame(single_person_household_2010, xy = TRUE)
+mean_single_person_household_2010<- mean(single_person_household_2010_df$single.person.household.2010, na.rm = TRUE)
+std_single_person_household_2010 <- sd(single_person_household_2010_df$single.person.household.2010, na.rm = TRUE)
+single_person_household_2010_df <- single_person_household_2010_df %>%
+  mutate(z_single_person_household_2010 = (single.person.household.2010 - mean_single_person_household_2010)/std_single_person_household_2010)
+```
+
+#### Total Household (#total-household-2010)
+```{r total-household-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+total_household_2010 <- raster('total-household-2010.tif')
+plot(total_household_2010)
+# calculate the mean and standard deviation of the population
+total_household_2010_df <- as.data.frame(total_household_2010, xy = TRUE)
+mean_total_household_2010<- mean(total_household_2010_df$total.household.2010, na.rm = TRUE)
+std_total_household_2010 <- sd(total_household_2010_df$total.household.2010, na.rm = TRUE)
+total_household_2010_df <- total_household_2010_df %>%
+  mutate(z_total_household_2010 = (total.household.2010 - mean_total_household_2010)/std_total_household_2010)
+```
+
+#### Total Housing Units (#total-housing-units-2010)
+```{r total-housing-units-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+total_housing_units_2010 <- raster('total-housing-units-2010.tif')
+plot(total_housing_units_2010)
+# calculate the mean and standard deviation of the population
+total_housing_units_2010_df <- as.data.frame(total_housing_units_2010, xy = TRUE)
+mean_total_housing_units_2010<- mean(total_housing_units_2010_df$total.housing.units.2010, na.rm = TRUE)
+std_total_housing_units_2010 <- sd(total_housing_units_2010_df$total.housing.units.2010, na.rm = TRUE)
+total_housing_units_2010_df <- total_housing_units_2010_df %>%
+  mutate(z_total_housing_units_2010 = (total.housing.units.2010 - mean_total_housing_units_2010)/std_total_housing_units_2010)
+```
+
+#### White Only (#white-only-2010)
+```{r white-only-2010, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+
+white_only_2010 <- raster('white-only-2010.tif')
+plot(white_only_2010)
+# calculate the mean and standard deviation of the population
+white_only_2010_df <- as.data.frame(white_only_2010, xy = TRUE)
+mean_white_only_2010<- mean(white_only_2010_df$white.only.2010, na.rm = TRUE)
+std_white_only_2010 <- sd(white_only_2010_df$white.only.2010, na.rm = TRUE)
+white_only_2010_df <- white_only_2010_df %>%
+  mutate(z_white_only_2010 = (white.only.2010 - mean_white_only_2010)/std_white_only_2010)
+```
+
+## Write the dasymetric ACS data of the year of 2010 (#write-acs-data-2010)
+```{r write-acs-data-2010, include=FALSE, message=FALSE, warning=FALSE}
+
+ write_rds(list(population_2010_df = population_2010_df, male_pop_2010_df = male_pop_2010_df,
+                 female_pop_2010_df = female_pop_2010_df, disable_pop_2010_df = disable_pop_2010_df,
+                 african_american_2010_df = african_american_2010_df, hispanic_2010_df = hispanic_2010_df,
+                 white_only_2010_df = white_only_2010_df, family_own_children_2010_df = family_own_children_2010_df,
+                 total_household_2010_df = total_household_2010_df, single_parent_family_2010_df = single_parent_family_2010_df,
+                 total_housing_units_2010_df = total_housing_units_2010_df, single_person_household_2010_df = single_person_household_2010_df, 
+                 multifamily_housing_2010_df = multifamily_housing_2010_df, household_senior_2010_df = household_senior_2010_df, 
+                 poverty_2010_df = poverty_2010_df, limit_education_attain_2010_df = limit_education_attain_2010_df, variable_df_2010 = variable_df_2010),
+            path = file.path(data_dir ="/Users/hebowen/Desktop/MarTREC_project/Data", "ACS_dasymetric_NLCD_2010.Rds"))
+```
+
+## Build the variables dataframe (#build-df-2010)
+
+Here, we incorporate all the variables and build the dataframe which contains all the variable's z score, geometry information in one dataframe, preparing for principal component analysis. Variables information are sourced from those listed dataframes: (1) population; (2) male population; (3) female population; (4) disable population; (5) african american population; (6) hispanic population; (7) white population; (8) poverty population; (9) limit education attain population; (10) single parent family; (11) single person household; (12) household with senior; (13) multifamily housing units; (14) total housing units; (15) total household; (16) single parent family
+
+```{r build-variable-df, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+variable_df_2010 <- population_2010_df %>% dplyr::select (-"population.2010") %>%
+  full_join(white_only_2010_df %>% dplyr::select(-"white.only.2010")) %>%
+  full_join(male_pop_2010_df %>% dplyr::select(-"male.population.2010")) %>%
+  full_join(female_pop_2010_df %>% dplyr::select(-"female.population.2010"))%>%
+  full_join(disable_pop_2010_df %>% dplyr::select(-"disable.population.2010"))%>%
+  full_join(african_american_2010_df %>% dplyr::select(-"african.american.2010"))%>%
+  full_join(hispanic_2010_df %>% dplyr::select(-"hispanic.2010"))%>%
+  full_join(family_own_children_2010_df %>% dplyr::select(-"family.own.children.2010")) %>%
+  full_join(total_household_2010_df %>% dplyr:: select(-"total.household.2010")) %>%
+  full_join(single_parent_family_2010_df %>% dplyr::select(-"single.parent.family.2010")) %>%
+  full_join(total_housing_units_2010_df %>% dplyr::select(-"total.housing.units.2010")) %>%
+  full_join(single_person_household_2010_df %>% dplyr::select(-"single.person.household.2010")) %>%
+  full_join(multifamily_housing_2010_df %>% dplyr::select(-"multi.family.housing.2010")) %>%
+  full_join(household_senior_2010_df %>% dplyr::select(-"household.senior.2010")) %>%
+  full_join(poverty_2010_df %>% dplyr::select(-"poverty.2010")) %>%
+  full_join(limit_education_attain_2010_df %>% dplyr::select(-"limit.education.attain.2010"))
+```
+#----------------------------------------------------------------------------------------------------------------------------------
+### The year of 2018 (#2018)
+#### Population (#pop-2018)
+```{r pop-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+#setwd("~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary")
+population_2018 <- raster::raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/population-2018.tif')
+plot(population_2018)
+# calculate the mean and standard deviation of the population
+population_2018_df <- as.data.frame(population_2018, xy = TRUE)
+population_2018_df[is.na(population_2018_df)] <- 0
+mean_pop_2018 <- mean(population_2018_df$`population.2018`, na.rm = TRUE)
+std_pop_2018 <- sd(population_2018_df$`population.2018`, na.rm = TRUE)
+population_2018_df <- population_2018_df %>%
+  mutate(z_pop_2018 = (`population.2018` - mean_pop_2018)/std_pop_2018)
+#-------custoum spatial resolution--------------------
+population_2018_nlcd <- as.data.frame(pop_2018_nlcd, xy = TRUE)
+population_2018_nlcd[is.na(population_2018_nlcd)] <- 0
+mean_pop_2018_nlcd <- mean(population_2018_nlcd$population.2018, na.rm = TRUE)
+std_pop_2018_nlcd <- sd(population_2018_nlcd$population.2018, na.rm = TRUE)
+population_2018_nlcd <- population_2018_nlcd %>%
+  mutate(z_pop_2018 = (population.2018 - mean_pop_2018_nlcd)/std_pop_2018_nlcd)
+```
+
+#### African American (#african-american-2018)
+```{r african-american-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+african_american_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/african-american-2018.tif')
+plot(african_american_2018)
+# calculate the mean and standard deviation of the population
+african_american_2018_df <- as.data.frame(african_american_2018, xy = TRUE)
+african_american_2018_df[is.na(african_american_2018_df)] <- 0
+mean_african_american_2018 <- mean(african_american_2018_df$`african.american.2018`, na.rm = TRUE)
+std_african_american_2018 <- sd(african_american_2018_df$`african.american.2018`, na.rm = TRUE)
+african_american_2018_df <- african_american_2018_df %>%
+  mutate(z_african_american_2018 = (`african.american.2018` - mean_african_american_2018)/std_african_american_2018)
+#-------custoum spatial resolution--------------------
+african_american_2018_nlcd <- as.data.frame(black_2018_nlcd, xy = TRUE)
+african_american_2018_nlcd[is.na(african_american_2018_nlcd)] <- 0
+mean_african_american_2018_nlcd <- mean(african_american_2018_nlcd$african.american.2018, na.rm = TRUE)
+std_african_american_2018_nlcd <- sd(african_american_2018_nlcd$african.american.2018, na.rm = TRUE)
+african_american_2018_nlcd <- african_american_2018_nlcd %>%
+  mutate(z_african_american_2018 = (african.american.2018 - mean_african_american_2018_nlcd)/std_african_american_2018_nlcd)
+```
+
+#### Disable Population (#disable-pop-2018)
+```{r disable-pop-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+disable_pop_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/disable-population-2018.tif')
+plot(disable_pop_2018)
+# calculate the mean and standard deviation of the population
+disable_pop_2018_df <- as.data.frame(disable_pop_2018, xy = TRUE)
+disable_pop_2018_df[is.na(disable_pop_2018_df)] <- 0
+mean_disable_pop_2018 <- mean(disable_pop_2018_df$`disable.population.2018`, na.rm = TRUE)
+std_disable_pop_2018 <- sd(disable_pop_2018_df$`disable.population.2018`, na.rm = TRUE)
+disable_pop_2018_df <- disable_pop_2018_df %>%
+  mutate(z_disable_pop_2018 = (`disable.population.2018` - mean_disable_pop_2018)/std_disable_pop_2018)
+#-------custoum spatial resolution--------------------
+disable_pop_2018_nlcd <- as.data.frame(disable_pop_2018_nlcd, xy = TRUE)
+disable_pop_2018_nlcd[is.na(disable_pop_2018_nlcd)] <- 0
+mean_disable_pop_2018_nlcd <- mean(disable_pop_2018_nlcd$disable.population.2018, na.rm = TRUE)
+std_disable_pop_2018_nlcd <- sd(disable_pop_2018_nlcd$disable.population.2018, na.rm = TRUE)
+disable_pop_2018_nlcd <- disable_pop_2018_nlcd %>%
+  mutate(z_disable_pop_2018 = (disable.population.2018 - mean_disable_pop_2018_nlcd)/std_disable_pop_2018_nlcd)
+```
+
+#### Family Own Children (#family-own-children-2018)
+
+```{r family-own-children-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+
+family_own_children_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/family-own-children-2018.tif')
+plot(family_own_children_2018)
+# calculate the mean and standard deviation of the population
+family_own_children_2018_df <- as.data.frame(family_own_children_2018, xy = TRUE)
+family_own_children_2018_df[is.na(family_own_children_2018_df)] <- 0
+mean_family_own_children_2018 <- mean(family_own_children_2018_df$`family.own.children.2018`, na.rm = TRUE)
+std_family_own_children_2018 <- sd(family_own_children_2018_df$`family.own.children.2018`, na.rm = TRUE)
+family_own_children_2018_df <-family_own_children_2018_df %>%
+  mutate(z_family_own_children_2018 = (`family.own.children.2018` - mean_family_own_children_2018)/std_family_own_children_2018)
+#-------custoum spatial resolution--------------------
+family_own_children_2018_nlcd <- as.data.frame(family_own_children_2018_nlcd, xy = TRUE)
+family_own_children_2018_nlcd[is.na(family_own_children_2018_nlcd)] <- 0
+mean_family_own_children_2018_nlcd <- mean(family_own_children_2018_nlcd$family.own.children.2018, na.rm = TRUE)
+std_family_own_children_2018_nlcd <- sd(family_own_children_2018_nlcd$family.own.children.2018, na.rm = TRUE)
+family_own_children_2018_nlcd <- family_own_children_2018_nlcd %>%
+  mutate(z_family_own_children_2018 = (family.own.children.2018 - mean_family_own_children_2018_nlcd)/std_family_own_children_2018_nlcd)
+```
+
+#### Female population (#female-pop-2018)
+
+```{r female-pop-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+
+female_pop_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/female-population-2018.tif')
+plot(female_pop_2018)
+# calculate the mean and standard deviation of the population
+female_pop_2018_df <- as.data.frame(female_pop_2018, xy = TRUE)
+female_pop_2018_df[is.na(female_pop_2018_df)] <- 0
+mean_female_pop_2018 <- mean(female_pop_2018_df$`female.population.2018`, na.rm = TRUE)
+std_female_pop_2018 <- sd(female_pop_2018_df$`female.population.2018`, na.rm = TRUE)
+female_pop_2018_df <-female_pop_2018_df %>%
+  mutate(z_female_pop_2018 = (`female.population.2018` - mean_female_pop_2018)/std_female_pop_2018)
+#-------custoum spatial resolution--------------------
+female_pop_2018_nlcd <- as.data.frame(female_pop_2018_nlcd, xy = TRUE)
+female_pop_2018_nlcd[is.na(female_pop_2018_nlcd)] <- 0
+mean_female_pop_2018_nlcd <- mean(female_pop_2018_nlcd$female.population.2018, na.rm = TRUE)
+std_female_pop_2018_nlcd <- sd(female_pop_2018_nlcd$female.population.2018, na.rm = TRUE)
+female_pop_2018_nlcd <- female_pop_2018_nlcd %>%
+  mutate(z_female_pop_2018 = (female.population.2018 - mean_female_pop_2018_nlcd)/std_female_pop_2018_nlcd)
+```
+
+#### Hispanic (#hispanic-2018)
+```{r hispanic-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+
+hispanic_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/hispanic-2018.tif')
+plot(hispanic_2018)
+# calculate the mean and standard deviation of the population
+hispanic_2018_df <- as.data.frame(hispanic_2018, xy = TRUE)
+hispanic_2018_df[is.na(hispanic_2018_df)] <- 0
+mean_hispanic_2018 <- mean(hispanic_2018_df$`hispanic.2018`, na.rm = TRUE)
+std_hispanic_2018 <- sd(hispanic_2018_df$`hispanic.2018`, na.rm = TRUE)
+hispanic_2018_df <-hispanic_2018_df %>%
+  mutate(z_hispanic_2018 = (`hispanic.2018` - mean_hispanic_2018)/std_hispanic_2018)
+#-------custoum spatial resolution--------------------
+hispanic_2018_nlcd <- as.data.frame(latino_2018_nlcd, xy = TRUE)
+hispanic_2018_nlcd[is.na(hispanic_2018_nlcd)] <- 0
+mean_hispanic_2018_nlcd <- mean(hispanic_2018_nlcd$hispanic.2018, na.rm = TRUE)
+std_hispanic_2018_nlcd <- sd(hispanic_2018_nlcd$hispanic.2018, na.rm = TRUE)
+hispanic_2018_nlcd <- hispanic_2018_nlcd %>%
+  mutate(z_hispanic_2018 = (hispanic.2018 - mean_hispanic_2018_nlcd)/std_hispanic_2018_nlcd)
+```
+
+#### Household senior (#household-senior-2018)
+```{r household-senior-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+
+household_senior_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/household-senior-2018.tif')
+plot(household_senior_2018)
+# calculate the mean and standard deviation of the population
+household_senior_2018_df <- as.data.frame(household_senior_2018, xy = TRUE)
+household_senior_2018_df[is.na(household_senior_2018_df)] <- 0
+mean_household_senior_2018<- mean(household_senior_2018_df$`household.senior.2018`, na.rm = TRUE)
+std_household_senior_2018 <- sd(household_senior_2018_df$`household.senior.2018`, na.rm = TRUE)
+household_senior_2018_df <- household_senior_2018_df %>%
+  mutate(z_household_senior_2018 = (`household.senior.2018` - mean_household_senior_2018)/std_household_senior_2018)
+#-------custoum spatial resolution--------------------
+household_senior_2018_nlcd <- as.data.frame(senior_household_2018_nlcd, xy = TRUE)
+household_senior_2018_nlcd[is.na(household_senior_2018_nlcd)] <- 0
+mean_household_senior_2018_nlcd <- mean(household_senior_2018_nlcd$household.senior.2018, na.rm = TRUE)
+std_household_senior_2018_nlcd <- sd(household_senior_2018_nlcd$household.senior.2018, na.rm = TRUE)
+household_senior_2018_nlcd <- household_senior_2018_nlcd %>%
+  mutate(z_household_senior_2018 = (household.senior.2018 - mean_household_senior_2018_nlcd)/std_household_senior_2018_nlcd)
+```
+
+#### Limit Education Attain (#limit-education-attain-2018)
+```{r limit-education-attain-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+
+limit_education_attain_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/limit-education-attain-2018.tif')
+plot(limit_education_attain_2018)
+# calculate the mean and standard deviation of the population
+limit_education_attain_2018_df <- as.data.frame(limit_education_attain_2018, xy = TRUE)
+limit_education_attain_2018_df[is.na(limit_education_attain_2018_df)] <- 0
+mean_limit_education_attain_2018 <- mean(limit_education_attain_2018_df$`limit.education.attain.2018`, na.rm = TRUE)
+std_limit_education_attain_2018 <- sd(limit_education_attain_2018_df$`limit.education.attain.2018`, na.rm = TRUE)
+limit_education_attain_2018_df <- limit_education_attain_2018_df %>%
+  mutate(z_limit_education_attain_2018 = (`limit.education.attain.2018` - mean_limit_education_attain_2018)/std_limit_education_attain_2018)
+#-------custoum spatial resolution--------------------
+limit_education_attain_2018_nlcd <- as.data.frame(limit_education_attain_2018_nlcd, xy = TRUE)
+limit_education_attain_2018_nlcd[is.na(limit_education_attain_2018_nlcd)] <- 0
+mean_limit_education_attain_2018_nlcd <- mean(limit_education_attain_2018_nlcd$limit.education.attain.2018, na.rm = TRUE)
+std_limit_education_attain_2018_nlcd <- sd(limit_education_attain_2018_nlcd$limit.education.attain.2018, na.rm = TRUE)
+limit_education_attain_2018_nlcd <- limit_education_attain_2018_nlcd %>%
+  mutate(z_limit_education_attain_2018 = (limit.education.attain.2018 - mean_limit_education_attain_2018_nlcd)/std_limit_education_attain_2018_nlcd)
+```
+
+#### Male Population (#male-pop-2018)
+```{r male-pop-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+
+male_pop_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/male-population-2018.tif')
+plot(male_pop_2018)
+# calculate the mean and standard deviation of the population
+male_pop_2018_df <- as.data.frame(male_pop_2018, xy = TRUE)
+male_pop_2018_df[is.na(male_pop_2018_df)] <- 0
+mean_male_pop_2018 <- mean(male_pop_2018_df$`male.population.2018`, na.rm = TRUE)
+std_male_pop_2018 <- sd(male_pop_2018_df$`male.population.2018`, na.rm = TRUE)
+male_pop_2018_df <- male_pop_2018_df %>%
+  mutate(z_male_pop_2018 = ( `male.population.2018`- mean_male_pop_2018)/std_male_pop_2018)
+#-------custoum spatial resolution--------------------
+male_pop_2018_nlcd <- as.data.frame(male_pop_2018_nlcd, xy = TRUE)
+male_pop_2018_nlcd[is.na(male_pop_2018_nlcd)] <- 0
+mean_male_pop_2018_nlcd <- mean(male_pop_2018_nlcd$male.population.2018, na.rm = TRUE)
+std_male_pop_2018_nlcd <- sd(male_pop_2018_nlcd$male.population.2018, na.rm = TRUE)
+male_pop_2018_nlcd <- male_pop_2018_nlcd %>%
+  mutate(z_male_pop_2018 = (male.population.2018 - mean_male_pop_2018_nlcd)/std_male_pop_2018_nlcd)
+```
+
+#### Multi-family Housing (#multifamily-2018)
+```{r male-pop-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+
+multifamily_housing_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/multi-family-housing-2018.tif')
+plot(multifamily_housing_2018)
+# calculate the mean and standard deviation of the population
+multifamily_housing_2018_df <- as.data.frame(multifamily_housing_2018, xy = TRUE)
+multifamily_housing_2018_df[is.na(multifamily_housing_2018_df)] <- 0
+mean_multifamily_housing_2018 <- mean(multifamily_housing_2018_df$`multi.family.housing.2018`, na.rm = TRUE)
+std_multifamily_housing_2018 <- sd(multifamily_housing_2018_df$`multi.family.housing.2018`, na.rm = TRUE)
+multifamily_housing_2018_df <- multifamily_housing_2018_df %>%
+  mutate(z_multifamily_housing_2018 = (`multi.family.housing.2018` - mean_multifamily_housing_2018)/std_multifamily_housing_2018)
+#-------custoum spatial resolution--------------------
+multifamily_housing_2018_nlcd <- as.data.frame(multifamily_house_2018_nlcd, xy = TRUE)
+multifamily_housing_2018_nlcd[is.na(multifamily_housing_2018_nlcd)] <- 0
+mean_multifamily_housing_2018_nlcd <- mean(multifamily_housing_2018_nlcd$multi.family.housing.2018, na.rm = TRUE)
+std_multifamily_housing_2018_nlcd <- sd(multifamily_housing_2018_nlcd$multi.family.housing.2018, na.rm = TRUE)
+multifamily_housing_2018_nlcd <- multifamily_housing_2018_nlcd %>%
+  mutate(z_multifamily_housing_2018 = (multi.family.housing.2018 - mean_multifamily_housing_2018_nlcd)/std_multifamily_housing_2018_nlcd)
+```
+
+#### Poverty (#poverty-2018)
+
+```{r poverty-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+
+poverty_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/poverty-2018.tif')
+plot(poverty_2018)
+# calculate the mean and standard deviation of the population
+poverty_2018_df <- as.data.frame(poverty_2018, xy = TRUE)
+poverty_2018_df[is.na(poverty_2018_df)] <- 0
+mean_poverty_2018 <- mean(poverty_2018_df$`poverty.2018`, na.rm = TRUE)
+std_poverty_2018 <- sd(poverty_2018_df$`poverty.2018`, na.rm = TRUE)
+poverty_2018_df <- poverty_2018_df %>%
+  mutate(z_poverty_2018 = (`poverty.2018` - mean_poverty_2018)/std_poverty_2018)
+#-------custoum spatial resolution--------------------
+poverty_2018_nlcd <- as.data.frame(poverty_2018_nlcd, xy = TRUE)
+poverty_2018_nlcd[is.na(poverty_2018_nlcd)] <- 0
+mean_poverty_2018_nlcd <- mean(poverty_2018_nlcd$poverty.2018, na.rm = TRUE)
+std_poverty_2018_nlcd <- sd(poverty_2018_nlcd$poverty.2018, na.rm = TRUE)
+poverty_2018_nlcd <- poverty_2018_nlcd %>%
+  mutate(z_poverty_2018 = (poverty.2018 - mean_poverty_2018_nlcd)/std_poverty_2018_nlcd)
+```
+
+#### Single-parent Family 2018 (#single-parent-family-2018)
+```{r poverty-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+
+single_parent_family_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/single-parent-family-2018.tif')
+plot(single_parent_family_2018)
+# calculate the mean and standard deviation of the population
+single_parent_family_2018_df <- as.data.frame(single_parent_family_2018, xy = TRUE)
+single_parent_family_2018_df[is.na(single_parent_family_2018_df)] <- 0
+mean_single_parent_family_2018<- mean(single_parent_family_2018_df$`single.parent.family.2018`, na.rm = TRUE)
+std_single_parent_family_2018 <- sd(single_parent_family_2018_df$`single.parent.family.2018`, na.rm = TRUE)
+single_parent_family_2018_df <- single_parent_family_2018_df %>%
+  mutate(z_single_parent_family_2018 = (`single.parent.family.2018` - mean_single_parent_family_2018)/std_single_parent_family_2018)
+#-------custoum spatial resolution--------------------
+single_parent_family_2018_nlcd <- as.data.frame(single_parent_family_2018_nlcd, xy = TRUE)
+single_parent_family_2018_nlcd[is.na(single_parent_family_2018_nlcd)] <- 0
+mean_single_parent_family_2018_nlcd <- mean(single_parent_family_2018_nlcd$single.parent.family.2018, na.rm = TRUE)
+std_single_parent_family_2018_nlcd <- sd(single_parent_family_2018_nlcd$single.parent.family.2018, na.rm = TRUE)
+single_parent_family_2018_nlcd <- single_parent_family_2018_nlcd %>%
+  mutate(z_single_parent_family_2018 = (single.parent.family.2018 - mean_single_parent_family_2018_nlcd)/std_single_parent_family_2018_nlcd)
+```
+
+#### Single-person Household (#single-person-household-2018)
+```{r single-person-household-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+single_person_household_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/single-person-household-2018.tif')
+plot(single_person_household_2018)
+# calculate the mean and standard deviation of the population
+single_person_household_2018_df <- as.data.frame(single_person_household_2018, xy = TRUE)
+single_person_household_2018_df[is.na(single_person_household_2018_df)] <- 0
+mean_single_person_household_2018<- mean(single_person_household_2018_df$`single.person.household.2018`, na.rm = TRUE)
+std_single_person_household_2018 <- sd(single_person_household_2018_df$`single.person.household.2018`, na.rm = TRUE)
+single_person_household_2018_df <- single_person_household_2018_df %>%
+  mutate(z_single_person_household_2018 = (`single.person.household.2018` - mean_single_person_household_2018)/std_single_person_household_2018)
+#-------custoum spatial resolution--------------------
+single_person_household_2018_nlcd <- as.data.frame(single_person_household_2018_nlcd, xy = TRUE)
+single_person_household_2018_nlcd[is.na(single_person_household_2018_nlcd)] <- 0
+mean_single_person_household_2018_nlcd <- mean(single_person_household_2018_nlcd$single.person.household.2018, na.rm = TRUE)
+std_single_person_household_2018_nlcd <- sd(single_person_household_2018_nlcd$single.person.household.2018, na.rm = TRUE)
+single_person_household_2018_nlcd <- single_person_household_2018_nlcd %>%
+  mutate(z_single_person_household_2018 = (single.person.household.2018 - mean_single_person_household_2018_nlcd)/std_single_person_household_2018_nlcd)
+```
+
+#### Total Household (#total-household-2018)
+```{r total-household-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+
+total_household_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/total-household-2018.tif')
+plot(total_household_2018)
+# calculate the mean and standard deviation of the population
+total_household_2018_df <- as.data.frame(total_household_2018, xy = TRUE)
+total_household_2018_df[is.na(total_household_2018_df)] <- 0
+mean_total_household_2018 <- mean(total_household_2018_df$`total.household.2018`, na.rm = TRUE)
+std_total_household_2018 <- sd(total_household_2018_df$`total.household.2018`, na.rm = TRUE)
+total_household_2018_df <- total_household_2018_df %>%
+  mutate(z_total_household_2018 = (`total.household.2018` - mean_total_household_2018)/std_total_household_2018)
+#-------custoum spatial resolution--------------------
+total_household_2018_nlcd <- as.data.frame(household_2018_nlcd, xy = TRUE)
+total_household_2018_nlcd[is.na(total_household_2018_nlcd)] <- 0
+mean_total_household_2018_nlcd <- mean(total_household_2018_nlcd$total.household.2018, na.rm = TRUE)
+std_total_household_2018_nlcd <- sd(total_household_2018_nlcd$total.household.2018, na.rm = TRUE)
+total_household_2018_nlcd <- total_household_2018_nlcd %>%
+  mutate(z_total_household_2018 = (total.household.2018 - mean_total_household_2018_nlcd)/std_total_household_2018_nlcd)
+```
+
+#### Total Housing Units (#total-housing-units-2018)
+```{r total-housing-units-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+total_housing_units_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/total-housing-units-2018.tif')
+plot(total_housing_units_2018)
+# calculate the mean and standard deviation of the population
+total_housing_units_2018_df <- as.data.frame(total_housing_units_2018, xy = TRUE)
+total_housing_units_2018_df[is.na(total_housing_units_2018_df)] <- 0
+mean_total_housing_units_2018 <- mean(total_housing_units_2018_df$`total.housing.units.2018`, na.rm = TRUE)
+std_total_housing_units_2018 <- sd(total_housing_units_2018_df$`total.housing.units.2018`, na.rm = TRUE)
+total_housing_units_2018_df <- total_housing_units_2018_df %>%
+  mutate(z_total_housing_units_2018 = (`total.housing.units.2018` - mean_total_housing_units_2018)/std_total_housing_units_2018)
+#-------custoum spatial resolution--------------------
+total_housing_units_2018_nlcd <- as.data.frame(occupied_housing_2018_nlcd, xy = TRUE)
+total_housing_units_2018_nlcd[is.na(total_housing_units_2018_nlcd)] <- 0
+mean_total_housing_units_2018_nlcd <- mean(total_housing_units_2018_nlcd$total.housing.units.2018, na.rm = TRUE)
+std_total_housing_units_2018_nlcd <- sd(total_housing_units_2018_nlcd$total.housing.units.2018, na.rm = TRUE)
+total_housing_units_2018_nlcd <- total_housing_units_2018_nlcd %>%
+  mutate(z_total_housing_units_2018 = (total.housing.units.2018 - mean_total_housing_units_2018_nlcd)/std_total_housing_units_2018_nlcd)
+```
+
+#### White Only (#white-only-2018)
+```{r white-only-2018, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+white_only_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/white-only-2018.tif')
+plot(white_only_2018)
+# calculate the mean and standard deviation of the population
+white_only_2018_df <- as.data.frame(white_only_2018, xy = TRUE)
+white_only_2018_df[is.na(white_only_2018_df)] <- 0
+mean_white_only_2018 <- mean(white_only_2018_df$`white.only.2018`, na.rm = TRUE)
+std_white_only_2018 <- sd(white_only_2018_df$`white.only.2018`, na.rm = TRUE)
+white_only_2018_df <- white_only_2018_df %>%
+  mutate(z_white_only_2018 = (`white.only.2018` - mean_white_only_2018)/std_white_only_2018)
+#-------custoum spatial resolution--------------------
+white_only_2018_nlcd <- as.data.frame(white_2018_nlcd, xy = TRUE)
+white_only_2018_nlcd[is.na(white_only_2018_nlcd)] <- 0
+mean_white_only_2018_nlcd <- mean(white_only_2018_nlcd$white.only.2018, na.rm = TRUE)
+std_white_only_2018_nlcd <- sd(white_only_2018_nlcd$white.only.2018, na.rm = TRUE)
+white_only_2018_nlcd <- white_only_2018_nlcd %>%
+  mutate(z_white_only_2018 = (white.only.2018 - mean_white_only_2018_nlcd)/std_white_only_2018_nlcd)
+```
+
+### Fire Station (#fire-station)
+```{r fire-station,  include = FALSE, message = FALSE, warning = FALSE}
+template <- population_2018
+values(template) = 0
+
+fire_station <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Emergency/Fire_Stations.shp') %>%
+    st_transform(st_crs(template)) %>% dplyr::select('ID')
+
+fire_station_raster <- rasterize(fire_station %>% st_buffer(1000), template, field = 'ID', fun='count')
+
+fun <- function(x) { 
+  x / (150*150) 
+}
+
+fire_station_raster <- fire_station_raster %>% calc(fun)
+plot(fire_station_raster)
+
+fire_station_2018_df <- as.data.frame(fire_station_raster, xy = TRUE) %>% rename('fire_station' = 'layer')
+fire_station_2018_df[is.na(fire_station_2018_df)] <- 0
+mean_fire_station_2018 <- mean(fire_station_2018_df$fire_station, na.rm = TRUE)
+std_fire_station_2018 <- sd(fire_station_2018_df$fire_station, na.rm = TRUE)
+fire_station_2018_df <- fire_station_2018_df %>%
+  mutate(z_fire_station_2018 = (fire_station - mean_fire_station_2018)/std_fire_station_2018)
+
+#-------custoum spatial resolution--------------------
+template_150 <- pop_2018_nlcd
+values(template_150) = 0
+fire_station_raster_nlcd <- rasterize(fire_station %>% st_buffer(1000), template_150, field = 'ID', fun='count')
+fire_station_raster_nlcd <- fire_station_raster_nlcd %>% calc(fun)
+plot(fire_station_raster_nlcd)
+
+fire_station_2018_nlcd <- as.data.frame(fire_station_raster_nlcd, xy = TRUE) %>% rename('fire_station' = 'layer')
+fire_station_2018_nlcd[is.na(fire_station_2018_nlcd)] <- 0
+mean_fire_station_2018_nlcd <- mean(fire_station_2018_nlcd$fire_station, na.rm = TRUE)
+std_fire_station_2018_nlcd <- sd(fire_station_2018_nlcd$fire_station, na.rm = TRUE)
+fire_station_2018_nlcd <- fire_station_2018_nlcd %>%
+  mutate(z_fire_station_2018 = (fire_station - mean_fire_station_2018_nlcd)/std_fire_station_2018_nlcd)
+```
+
+### Grocery Stores (#grocery)
+```{r grocery, include=FALSE, message=FALSE, warning=FALSE}
+grocery_stores <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Grocery/Stores.shp') %>% 
+  st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+grocery_stores_raster <- rasterize(grocery_stores %>% st_buffer(1000), template, field = 'osm_id', fun='count')
+
+grocery_stores_raster <- grocery_stores_raster %>% calc(fun)
+
+plot(grocery_stores_raster)
+#writeRaster(grocery_stores_raster,'/Users/hebowen/Desktop/points_interests_raster/grocery_stores.tif', overwrite = TRUE)
+
+grocery_stores_2018_df <- as.data.frame(grocery_stores_raster, xy = TRUE) %>% rename('grocery_stores' = 'layer')
+grocery_stores_2018_df[is.na(grocery_stores_2018_df)] <- 0
+mean_grocery_stores_2018 <- mean(grocery_stores_2018_df$grocery_stores, na.rm = TRUE)
+std_grocery_stores_2018 <- sd(grocery_stores_2018_df$grocery_stores, na.rm = TRUE)
+grocery_stores_2018_df <- grocery_stores_2018_df %>%
+  mutate(z_grocery_stores_2018 = (grocery_stores - mean_grocery_stores_2018)/std_grocery_stores_2018)
+
+#-------custoum spatial resolution--------------------
+grocery_stores_raster_nlcd <- rasterize(grocery_stores %>% st_buffer(1000), template_150, field = 'osm_id', fun='count')
+grocery_stores_raster_nlcd <- grocery_stores_raster_nlcd %>% calc(fun)
+plot(grocery_stores_raster_nlcd)
+#writeRaster(grocery_stores_raster,'/Users/hebowen/Desktop/points_interests_raster/grocery_stores.tif', overwrite = TRUE)
+grocery_stores_2018_nlcd <- as.data.frame(grocery_stores_raster_nlcd, xy = TRUE) %>% rename('grocery_stores' = 'layer')
+grocery_stores_2018_nlcd[is.na(grocery_stores_2018_nlcd)] <- 0
+mean_grocery_stores_2018_nlcd <- mean(grocery_stores_2018_nlcd$grocery_stores, na.rm = TRUE)
+std_grocery_stores_2018_nlcd <- sd(grocery_stores_2018_nlcd$grocery_stores, na.rm = TRUE)
+grocery_stores_2018_nlcd <- grocery_stores_2018_nlcd %>%
+  mutate(z_grocery_stores_2018 = (grocery_stores - mean_grocery_stores_2018_nlcd)/std_grocery_stores_2018_nlcd)
+```
+
+### Super Market (#supermarket)
+```{r supermarket, include=FALSE, message=FALSE, warning=FALSE}
+supermarket <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Grocery/supermarket.shp') %>% 
+ st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+supermarket_raster <- rasterize(supermarket %>% st_buffer(1000), template, field = 'osm_id', fun='count')
+supermarket_raster <- supermarket_raster %>% calc(fun)
+plot(supermarket_raster)
+
+supermarket_2018_df <- as.data.frame(supermarket_raster, xy = TRUE) %>% rename('supermarket' = 'layer')
+supermarket_2018_df[is.na(supermarket_2018_df)] <- 0
+mean_supermarket_2018 <- mean(supermarket_2018_df$supermarket, na.rm = TRUE)
+std_supermarket_2018 <- sd(supermarket_2018_df$supermarket, na.rm = TRUE)
+supermarket_2018_df <- supermarket_2018_df %>%
+  mutate(z_supermarket_2018 = (supermarket - mean_supermarket_2018)/std_supermarket_2018)
+#-------custoum spatial resolution--------------------
+supermarket_raster_nlcd <- rasterize(supermarket %>% st_buffer(1000), template_150, field = 'osm_id', fun='count')
+supermarket_raster_nlcd <- supermarket_raster_nlcd %>% calc(fun)
+plot(supermarket_raster_nlcd)
+
+supermarket_2018_nlcd <- as.data.frame(supermarket_raster_nlcd, xy = TRUE) %>% rename('supermarket' = 'layer')
+supermarket_2018_nlcd[is.na(supermarket_2018_nlcd)] <- 0
+mean_supermarket_2018_nlcd <- mean(supermarket_2018_nlcd$supermarket, na.rm = TRUE)
+std_supermarket_2018_nlcd <- sd(supermarket_2018_nlcd$supermarket, na.rm = TRUE)
+supermarket_2018_nlcd <- supermarket_2018_nlcd %>%
+  mutate(z_supermarket_2018 = (supermarket - mean_supermarket_2018_nlcd)/std_supermarket_2018_nlcd)
+```
+
+### Emergency Rooms (#emergency)
+```{r emergency, include=FALSE, message=FALSE, warning=FALSE}
+emergency <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Healthcare/Emergency Rooms.shp') %>% 
+  st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+emergency_raster <- rasterize(emergency %>% st_buffer(1000), template, field = 'osm_id', fun='count')
+emergency_raster <- emergency_raster %>% calc(fun)
+plot(emergency_raster)
+
+emergency_2018_df <- as.data.frame(emergency_raster, xy = TRUE) %>% rename('emergency' = 'layer')
+emergency_2018_df[is.na(emergency_2018_df)] <- 0
+mean_emergency_2018 <- mean(emergency_2018_df$emergency, na.rm = TRUE)
+std_emergency_2018 <- sd(emergency_2018_df$emergency, na.rm = TRUE)
+emergency_2018_df <- emergency_2018_df %>%
+  mutate(z_emergency_2018 = (emergency - mean_emergency_2018)/std_emergency_2018)
+#-------custoum spatial resolution--------------------
+emergency_raster_nlcd <- rasterize(emergency %>% st_buffer(1000), template_150, field = 'osm_id', fun='count')
+emergency_raster_nlcd <- emergency_raster_nlcd %>% calc(fun)
+plot(emergency_raster_nlcd)
+
+emergency_2018_nlcd <- as.data.frame(emergency_raster_nlcd, xy = TRUE) %>% rename('emergency' = 'layer')
+emergency_2018_nlcd[is.na(emergency_2018_nlcd)] <- 0
+mean_emergency_2018_nlcd <- mean(emergency_2018_nlcd$emergency, na.rm = TRUE)
+std_emergency_2018_nlcd <- sd(emergency_2018_nlcd$emergency, na.rm = TRUE)
+emergency_2018_nlcd <- emergency_2018_nlcd %>%
+  mutate(z_emergency_2018 = (emergency - mean_emergency_2018_nlcd)/std_emergency_2018_nlcd)
+```
+
+### Healthcare (#healthcare)
+```{r healthcare, include=FALSE, message=FALSE, warning=FALSE}
+healthcare <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Healthcare/Healthcare.shp') %>% 
+ st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+healthcare_raster <- rasterize(healthcare %>% st_buffer(1000), template, field = 'osm_id', fun='count')
+healthcare_raster <- healthcare_raster %>% calc(fun)
+plot(healthcare_raster)
+
+healthcare_2018_df <- as.data.frame(healthcare_raster, xy = TRUE) %>% rename('healthcare' = 'layer')
+healthcare_2018_df[is.na(healthcare_2018_df)] <- 0
+mean_healthcare_2018 <- mean(healthcare_2018_df$healthcare, na.rm = TRUE)
+std_healthcare_2018 <- sd(healthcare_2018_df$healthcare, na.rm = TRUE)
+healthcare_2018_df <- healthcare_2018_df %>%
+  mutate(z_healthcare_2018 = (healthcare - mean_healthcare_2018)/std_healthcare_2018)
+#-------custoum spatial resolution--------------------
+healthcare_raster_nlcd <- rasterize(healthcare %>% st_buffer(1000), template_150, field = 'osm_id', fun='count')
+healthcare_raster_nlcd <- healthcare_raster_nlcd %>% calc(fun)
+plot(healthcare_raster_nlcd)
+
+healthcare_2018_nlcd <- as.data.frame(healthcare_raster_nlcd, xy = TRUE) %>% rename('healthcare' = 'layer')
+healthcare_2018_nlcd[is.na(healthcare_2018_nlcd)] <- 0
+mean_healthcare_2018_nlcd <- mean(healthcare_2018_nlcd$healthcare, na.rm = TRUE)
+std_healthcare_2018_nlcd <- sd(healthcare_2018_nlcd$healthcare, na.rm = TRUE)
+healthcare_2018_nlcd <- healthcare_2018_nlcd %>%
+  mutate(z_healthcare_2018 = (healthcare - mean_healthcare_2018_nlcd)/std_healthcare_2018_nlcd)
+```
+
+### Hospitals (#hospital)
+```{r hospital, include=FALSE, message=FALSE, warning=FALSE}
+hospital <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Healthcare/Hospitals.shp') %>% 
+  st_transform(st_crs(template)) %>% dplyr::select('ID')
+
+hospital_raster <- rasterize(hospital %>% st_buffer(1000), template, field = 'ID', fun='count')
+hospital_raster <- hospital_raster %>% calc(fun)
+plot(hospital_raster)
+#writeRaster(hospital_raster,'/Users/hebowen/Desktop/points_interests_raster/hospital.tif', overwrite = TRUE)
+
+hospital_2018_df <- as.data.frame(hospital_raster, xy = TRUE) %>% rename('hospital' = 'layer')
+hospital_2018_df[is.na(hospital_2018_df)] <- 0
+mean_hospital_2018 <- mean(hospital_2018_df$hospital, na.rm = TRUE)
+std_hospital_2018 <- sd(hospital_2018_df$hospital, na.rm = TRUE)
+hospital_2018_df <- hospital_2018_df %>%
+  mutate(z_hospital_2018 = (hospital - mean_hospital_2018)/std_hospital_2018)
+#-------custoum spatial resolution--------------------
+hospital_raster_nlcd <- rasterize(hospital %>% st_buffer(1000), template_150, field = 'ID', fun='count')
+hospital_raster_nlcd <- hospital_raster_nlcd %>% calc(fun)
+plot(hospital_raster_nlcd)
+#writeRaster(hospital_raster,'/Users/hebowen/Desktop/points_interests_raster/hospital.tif', overwrite = TRUE)
+
+hospital_2018_nlcd <- as.data.frame(hospital_raster_nlcd, xy = TRUE) %>% rename('hospital' = 'layer')
+hospital_2018_nlcd[is.na(hospital_2018_nlcd)] <- 0
+mean_hospital_2018_nlcd <- mean(hospital_2018_nlcd$hospital, na.rm = TRUE)
+std_hospital_2018_nlcd <- sd(hospital_2018_nlcd$hospital, na.rm = TRUE)
+hospital_2018_nlcd <- hospital_2018_nlcd %>%
+  mutate(z_hospital_2018 = (hospital - mean_hospital_2018_nlcd)/std_hospital_2018_nlcd)
+```
+
+### Denominations (#denominations)
+```{r denominations, include=FALSE, message=FALSE, warning=FALSE}
+denomination <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Religious/Denominations.shp') %>% 
+   st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+denomination_raster <- rasterize(denomination %>% st_buffer(1000), template, field = 'osm_id', fun='count')
+denomination_raster <- denomination_raster %>% calc(fun)
+plot(denomination_raster)
+#writeRaster(denomination_raster,'/Users/hebowen/Desktop/points_interests_raster/denomination.tif', overwrite = TRUE)
+
+denomination_2018_df <- as.data.frame(denomination_raster, xy = TRUE) %>% rename('denomination' = 'layer')
+denomination_2018_df[is.na(denomination_2018_df)] <- 0
+mean_denomination_2018 <- mean(denomination_2018_df$denomination, na.rm = TRUE)
+std_denomination_2018 <- sd(denomination_2018_df$denomination, na.rm = TRUE)
+denomination_2018_df <- denomination_2018_df %>%
+  mutate(z_denomination_2018 = (denomination - mean_denomination_2018)/std_denomination_2018)
+#-------custoum spatial resolution--------------------
+denomination_raster_nlcd <- rasterize(denomination %>% st_buffer(1000), template_150, field = 'osm_id', fun='count')
+denomination_raster_nlcd <- denomination_raster_nlcd %>% calc(fun)
+plot(denomination_raster_nlcd)
+#writeRaster(denomination_raster,'/Users/hebowen/Desktop/points_interests_raster/denomination.tif', overwrite = TRUE)
+
+denomination_2018_nlcd <- as.data.frame(denomination_raster_nlcd, xy = TRUE) %>% rename('denomination' = 'layer')
+denomination_2018_nlcd[is.na(denomination_2018_nlcd)] <- 0
+mean_denomination_2018_nlcd <- mean(denomination_2018_nlcd$denomination, na.rm = TRUE)
+std_denomination_2018_nlcd <- sd(denomination_2018_nlcd$denomination, na.rm = TRUE)
+denomination_2018_nlcd <- denomination_2018_nlcd %>%
+  mutate(z_denomination_2018 = (denomination - mean_denomination_2018_nlcd)/std_denomination_2018_nlcd)
+```
+
+### Places Worship (#Worship)
+```{r worship, include=FALSE, message=FALSE, warning=FALSE}
+worship <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Religious/Places_of_Worship.shp') %>% 
+   st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+worship_raster <- rasterize(worship %>% st_buffer(1000), template, field = 'osm_id', fun='count')
+worship_raster <- worship_raster %>% calc(fun)
+plot(worship_raster)
+#writeRaster(worship_raster,'/Users/hebowen/Desktop/points_interests_raster/worship.tif', overwrite = TRUE)
+
+worship_2018_df <- as.data.frame(worship_raster, xy = TRUE) %>% rename('worship' = 'layer')
+worship_2018_df[is.na(worship_2018_df)] <- 0
+mean_worship_2018 <- mean(worship_2018_df$worship, na.rm = TRUE)
+std_worship_2018 <- sd(worship_2018_df$worship, na.rm = TRUE)
+worship_2018_df <- worship_2018_df %>%
+  mutate(z_worship_2018 = (worship - mean_worship_2018)/std_worship_2018)
+#-------custoum spatial resolution--------------------
+worship_raster_nlcd <- rasterize(worship %>% st_buffer(1000), template_150, field = 'osm_id', fun='count')
+worship_raster_nlcd <- worship_raster_nlcd %>% calc(fun)
+plot(worship_raster_nlcd)
+#writeRaster(worship_raster,'/Users/hebowen/Desktop/points_interests_raster/worship.tif', overwrite = TRUE)
+
+worship_2018_nlcd <- as.data.frame(worship_raster_nlcd, xy = TRUE) %>% rename('worship' = 'layer')
+worship_2018_nlcd[is.na(worship_2018_nlcd)] <- 0
+mean_worship_2018_nlcd <- mean(worship_2018_nlcd$worship, na.rm = TRUE)
+std_worship_2018_nlcd <- sd(worship_2018_nlcd$worship, na.rm = TRUE)
+worship_2018_nlcd <- worship_2018_nlcd %>%
+  mutate(z_worship_2018 = (worship - mean_worship_2018_nlcd)/std_worship_2018_nlcd)
+```
+
+### Religion (#religion)
+```{r religion, include=FALSE, message=FALSE, warning=FALSE}
+religion <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Religious/Religion.shp') %>% 
+  st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+religion_raster <- rasterize(religion %>% st_buffer(1000), template, field = 'osm_id', fun = 'count')
+religion_raster <- religion_raster %>% calc(fun)
+plot(religion_raster)
+
+religion_2018_df <- as.data.frame(religion_raster, xy = TRUE) %>% rename('religion' = 'layer')
+religion_2018_df[is.na(religion_2018_df)] <- 0
+mean_religion_2018 <- mean(religion_2018_df$religion, na.rm = TRUE)
+std_religion_2018 <- sd(religion_2018_df$religion, na.rm = TRUE)
+religion_2018_df <- religion_2018_df %>%
+  mutate(z_religion_2018 = (religion - mean_religion_2018)/std_religion_2018)
+#-------custoum spatial resolution--------------------
+religion_raster_nlcd <- rasterize(religion %>% st_buffer(1000), template_150, field = 'osm_id', fun = 'count')
+religion_raster_nlcd <- religion_raster_nlcd %>% calc(fun)
+plot(religion_raster_nlcd)
+
+religion_2018_nlcd <- as.data.frame(religion_raster_nlcd, xy = TRUE) %>% rename('religion' = 'layer')
+religion_2018_nlcd[is.na(religion_2018_nlcd)] <- 0
+mean_religion_2018_nlcd <- mean(religion_2018_nlcd$religion, na.rm = TRUE)
+std_religion_2018_nlcd <- sd(religion_2018_nlcd$religion, na.rm = TRUE)
+religion_2018_nlcd <- religion_2018_nlcd %>%
+  mutate(z_religion_2018 = (religion - mean_religion_2018_nlcd)/std_religion_2018_nlcd)
+```
+
+### College (#college)
+```{r college, include=FALSE, message=FALSE, warning=FALSE}
+college <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/College.shp') %>% 
+  st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+college_raster <- rasterize(college %>% st_buffer(1000), template, field = 'osm_id', fun = 'count')
+college_raster <- college_raster %>% calc(fun)
+plot(college_raster)
+#writeRaster(college_raster,'/Users/hebowen/Desktop/points_interests_raster/college.tif', overwrite = TRUE)
+
+college_2018_df <- as.data.frame(college_raster, xy = TRUE) %>% rename('college' = 'layer')
+college_2018_df[is.na(college_2018_df)] <- 0
+mean_college_2018 <- mean(college_2018_df$college, na.rm = TRUE)
+std_college_2018 <- sd(college_2018_df$college, na.rm = TRUE)
+college_2018_df <- college_2018_df %>%
+  mutate(z_college_2018 = (college- mean_college_2018)/std_college_2018)
+#-------custoum spatial resolution--------------------
+college_raster_nlcd <- rasterize(college %>% st_buffer(1000), template_150, field = 'osm_id', fun = 'count')
+college_raster_nlcd <- college_raster_nlcd %>% calc(fun)
+plot(college_raster_nlcd)
+#writeRaster(college_raster,'/Users/hebowen/Desktop/points_interests_raster/college.tif', overwrite = TRUE)
+
+college_2018_nlcd <- as.data.frame(college_raster_nlcd, xy = TRUE) %>% rename('college' = 'layer')
+college_2018_nlcd[is.na(college_2018_nlcd)] <- 0
+mean_college_2018_nlcd <- mean(college_2018_nlcd$college, na.rm = TRUE)
+std_college_2018_nlcd <- sd(college_2018_nlcd$college, na.rm = TRUE)
+college_2018_nlcd <- college_2018_nlcd %>%
+  mutate(z_college_2018 = (college- mean_college_2018_nlcd)/std_college_2018_nlcd)
+```
+
+### kindergarten (#kindergarten)
+```{r kindergarten, include=FALSE, message=FALSE, warning=FALSE}
+kindergarten <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/kindergarten.shp') %>% 
+  st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+kindergarten_raster <- rasterize(kindergarten %>% st_buffer(1000), template, field = 'osm_id', fun = 'count')
+kindergarten_raster <- kindergarten_raster %>% calc(fun)
+plot(kindergarten_raster)
+#writeRaster(kindergarten_raster,'/Users/hebowen/Desktop/points_interests_raster/kindergarten.tif', overwrite = TRUE)
+
+kindergarten_2018_df <- as.data.frame(kindergarten_raster, xy = TRUE) %>% rename('kindergarten' = 'layer')
+kindergarten_2018_df[is.na(kindergarten_2018_df)] <- 0
+mean_kindergarten_2018 <- mean(kindergarten_2018_df$kindergarten, na.rm = TRUE)
+std_kindergarten_2018 <- sd(kindergarten_2018_df$kindergarten, na.rm = TRUE)
+kindergarten_2018_df <- kindergarten_2018_df %>%
+  mutate(z_kindergarten_2018 = (kindergarten - mean_kindergarten_2018)/std_kindergarten_2018)
+#-------custoum spatial resolution--------------------
+kindergarten_raster_nlcd <- rasterize(kindergarten %>% st_buffer(1000), template_150, field = 'osm_id', fun = 'count')
+kindergarten_raster_nlcd <- kindergarten_raster_nlcd %>% calc(fun)
+plot(kindergarten_raster_nlcd)
+#writeRaster(kindergarten_raster,'/Users/hebowen/Desktop/points_interests_raster/kindergarten.tif', overwrite = TRUE)
+
+kindergarten_2018_nlcd <- as.data.frame(kindergarten_raster_nlcd, xy = TRUE) %>% rename('kindergarten' = 'layer')
+kindergarten_2018_nlcd[is.na(kindergarten_2018_nlcd)] <- 0
+mean_kindergarten_2018_nlcd <- mean(kindergarten_2018_nlcd$kindergarten, na.rm = TRUE)
+std_kindergarten_2018_nlcd <- sd(kindergarten_2018_nlcd$kindergarten, na.rm = TRUE)
+kindergarten_2018_nlcd <- kindergarten_2018_nlcd %>%
+  mutate(z_kindergarten_2018 = (kindergarten - mean_kindergarten_2018_nlcd)/std_kindergarten_2018_nlcd)
+```
+
+### libraries (#libraries)
+```{r libraries, include=FALSE, message=FALSE, warning=FALSE}
+libraries <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/Libraries.shp') %>% 
+  st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+libraries_raster <- rasterize(libraries %>% st_buffer(1000), template, field = 'osm_id', fun = 'count')
+libraries_raster <- libraries_raster %>% calc(fun)
+plot(libraries_raster)
+#writeRaster(libraries_raster,'/Users/hebowen/Desktop/points_interests_raster/libraries.tif', overwrite = TRUE)
+
+libraries_2018_df <- as.data.frame(libraries_raster, xy = TRUE) %>% rename('libraries' = 'layer')
+libraries_2018_df[is.na(libraries_2018_df)] <- 0
+mean_libraries_2018 <- mean(libraries_2018_df$libraries, na.rm = TRUE)
+std_libraries_2018 <- sd(libraries_2018_df$libraries, na.rm = TRUE)
+libraries_2018_df <- libraries_2018_df %>%
+  mutate(z_libraries_2018 = (libraries - mean_libraries_2018)/std_libraries_2018)
+#-------custoum spatial resolution--------------------
+libraries_raster_nlcd <- rasterize(libraries %>% st_buffer(1000), template_150, field = 'osm_id', fun = 'count')
+libraries_raster_nlcd <- libraries_raster_nlcd %>% calc(fun)
+plot(libraries_raster_nlcd)
+#writeRaster(libraries_raster,'/Users/hebowen/Desktop/points_interests_raster/libraries.tif', overwrite = TRUE)
+
+libraries_2018_nlcd <- as.data.frame(libraries_raster_nlcd, xy = TRUE) %>% rename('libraries' = 'layer')
+libraries_2018_nlcd[is.na(libraries_2018_nlcd)] <- 0
+mean_libraries_2018_nlcd <- mean(libraries_2018_nlcd$libraries, na.rm = TRUE)
+std_libraries_2018_nlcd <- sd(libraries_2018_nlcd$libraries, na.rm = TRUE)
+libraries_2018_nlcd <- libraries_2018_nlcd %>%
+  mutate(z_libraries_2018 = (libraries - mean_libraries_2018_nlcd)/std_libraries_2018_nlcd)
+```
+
+### private school (#private-schools)
+```{r public, include=FALSE, message=FALSE, warning=FALSE}
+private <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/private_schools.shp') %>% 
+  st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+private_raster <- rasterize(private %>% st_buffer(1000), template, field = 'osm_id', fun = 'count')
+private_raster <- private_raster %>% calc(fun)
+plot(private_raster)
+###writeRaster(private_raster,'/Users/hebowen/Desktop/points_interests_raster/private.tif', overwrite = TRUE)
+
+private_2018_df <- as.data.frame(private_raster, xy = TRUE) %>% rename('private' = 'layer')
+private_2018_df[is.na(private_2018_df)] <- 0
+mean_private_2018 <- mean(private_2018_df$private, na.rm = TRUE)
+std_private_2018 <- sd(private_2018_df$private, na.rm = TRUE)
+private_2018_df <- private_2018_df %>%
+  mutate(z_private_2018 = (private - mean_private_2018)/std_private_2018)
+#-------custoum spatial resolution--------------------
+private_raster_nlcd <- rasterize(private %>% st_buffer(1000), template_150, field = 'osm_id', fun = 'count')
+private_raster_nlcd <- private_raster_nlcd %>% calc(fun)
+plot(private_raster_nlcd)
+###writeRaster(private_raster,'/Users/hebowen/Desktop/points_interests_raster/private.tif', overwrite = TRUE)
+
+private_2018_nlcd <- as.data.frame(private_raster_nlcd, xy = TRUE) %>% rename('private' = 'layer')
+private_2018_nlcd[is.na(private_2018_nlcd)] <- 0
+mean_private_2018_nlcd <- mean(private_2018_nlcd$private, na.rm = TRUE)
+std_private_2018_nlcd <- sd(private_2018_nlcd$private, na.rm = TRUE)
+private_2018_nlcd <- private_2018_nlcd %>%
+  mutate(z_private_2018 = (private - mean_private_2018_nlcd)/std_private_2018_nlcd)
+```
+
+### public school (#public-schools)
+```{r public, include=FALSE, message=FALSE, warning=FALSE}
+public <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/Nashville_Public.shp') %>% 
+   st_transform(st_crs(template)) %>% dplyr::select('X1')
+
+public_raster <- rasterize(public %>% st_buffer(1000), template, field = 'X1', fun = 'count')
+public_raster <- public_raster %>% calc(fun)
+plot(public_raster)
+#writeRaster(public_raster,'/Users/hebowen/Desktop/points_interests_raster/public.tif', overwrite = TRUE)
+
+public_2018_df <- as.data.frame(public_raster, xy = TRUE) %>% rename('public' = 'layer')
+public_2018_df[is.na(public_2018_df)] <- 0
+mean_public_2018 <- mean(public_2018_df$public, na.rm = TRUE)
+std_public_2018 <- sd(public_2018_df$public, na.rm = TRUE)
+public_2018_df <- public_2018_df %>%
+  mutate(z_public_2018 = (public - mean_public_2018)/std_public_2018)
+#-------custoum spatial resolution--------------------
+public_raster_nlcd <- rasterize(public %>% st_buffer(1000), template_150, field = 'X1', fun = 'count')
+public_raster_nlcd <- public_raster_nlcd %>% calc(fun)
+plot(public_raster_nlcd)
+#writeRaster(public_raster,'/Users/hebowen/Desktop/points_interests_raster/public.tif', overwrite = TRUE)
+
+public_2018_nlcd <- as.data.frame(public_raster_nlcd, xy = TRUE) %>% rename('public' = 'layer')
+public_2018_nlcd[is.na(public_2018_nlcd)] <- 0
+mean_public_2018_nlcd <- mean(public_2018_nlcd$public, na.rm = TRUE)
+std_public_2018_nlcd <- sd(public_2018_nlcd$public, na.rm = TRUE)
+public_2018_nlcd <- public_2018_nlcd %>%
+  mutate(z_public_2018 = (public - mean_public_2018_nlcd)/std_public_2018_nlcd)
+```
+
+### K-12 school (#k-12)
+```{r school, include=FALSE, message=FALSE, warning=FALSE}
+school <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/School.shp') %>% 
+  st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+school_raster <- rasterize(school %>% st_buffer(1000), template, field = 'osm_id', fun = 'count')
+school_raster <- school_raster %>% calc(fun)
+plot(school_raster)
+#writeRaster(school_raster,'/Users/hebowen/Desktop/points_interests_raster/school.tif', overwrite = TRUE)
+
+school_2018_df <- as.data.frame(school_raster, xy = TRUE) %>% rename('school' = 'layer')
+school_2018_df[is.na(school_2018_df)] <- 0
+mean_school_2018 <- mean(school_2018_df$school, na.rm = TRUE)
+std_school_2018 <- sd(school_2018_df$school, na.rm = TRUE)
+school_2018_df <- school_2018_df %>%
+  mutate(z_school_2018 = (school - mean_school_2018)/std_school_2018)
+#-------custoum spatial resolution--------------------
+school_raster_nlcd <- rasterize(school %>% st_buffer(1000), template_150, field = 'osm_id', fun = 'count')
+school_raster_nlcd <- school_raster_nlcd %>% calc(fun)
+plot(school_raster_nlcd)
+#writeRaster(school_raster,'/Users/hebowen/Desktop/points_interests_raster/school.tif', overwrite = TRUE)
+
+school_2018_nlcd <- as.data.frame(school_raster_nlcd, xy = TRUE) %>% rename('school' = 'layer')
+school_2018_nlcd[is.na(school_2018_nlcd)] <- 0
+mean_school_2018_nlcd <- mean(school_2018_nlcd$school, na.rm = TRUE)
+std_school_2018_nlcd <- sd(school_2018_nlcd$school, na.rm = TRUE)
+school_2018_nlcd <- school_2018_nlcd %>%
+  mutate(z_school_2018 = (school - mean_school_2018_nlcd)/std_school_2018_nlcd)
+```
+
+### University (#university)
+```{r university, include=FALSE, message=FALSE, warning=FALSE}
+university <- st_read('/Users/hebowen/Desktop/MarTREC_project/Data/Davidson_points_interests/Schools/University.shp') %>% 
+  st_transform(st_crs(template)) %>% dplyr::select('osm_id')
+
+university_raster <- rasterize(university %>% st_buffer(1000), template, field = 'osm_id', fun = 'count')
+university_raster <- university_raster %>% calc(fun)
+plot(university_raster)
+#writeRaster(university_raster,'/Users/hebowen/Desktop/points_interests_raster/university.tif', overwrite = TRUE)
+
+university_2018_df <- as.data.frame(university_raster, xy = TRUE) %>% rename('university' = 'layer')
+university_2018_df[is.na(university_2018_df)] <- 0
+mean_university_2018 <- mean(university_2018_df$university, na.rm = TRUE)
+std_university_2018 <- sd(university_2018_df$university, na.rm = TRUE)
+university_2018_df <- university_2018_df %>%
+  mutate(z_university_2018 = (university - mean_university_2018)/std_university_2018)
+#-------custoum spatial resolution--------------------
+university_raster_nlcd <- rasterize(university %>% st_buffer(1000), template_150, field = 'osm_id', fun = 'count')
+university_raster_nlcd <- university_raster_nlcd %>% calc(fun)
+plot(university_raster_nlcd)
+#writeRaster(university_raster,'/Users/hebowen/Desktop/points_interests_raster/university.tif', overwrite = TRUE)
+
+university_2018_nlcd <- as.data.frame(university_raster_nlcd, xy = TRUE) %>% rename('university' = 'layer')
+university_2018_nlcd[is.na(university_2018_nlcd)] <- 0
+mean_university_2018_nlcd <- mean(university_2018_nlcd$university, na.rm = TRUE)
+std_university_2018_nlcd <- sd(university_2018_nlcd$university, na.rm = TRUE)
+university_2018_nlcd <- university_2018_nlcd %>%
+  mutate(z_university_2018 = (university - mean_university_2018_nlcd)/std_university_2018_nlcd)
+```
+
+## Build the variables dataframe (#build-df-2018)
+
+Here, we incorporate all the variables and build the dataframe which contains all the variable's z score, geometry information in one dataframe, preparing for principal component analysis. Variables information are sourced from those listed dataframes: (1) population; (2) male population; (3) female population; (4) disable population; (5) african american population; (6) hispanic population; (7) white population; (8) poverty population; (9) limit education attain population; (10) single parent family; (11) single person household; (12) household with senior; (13) multifamily housing units; (14) total housing units; (15) total household; (16) family-owned children
+
+Also, we incorporate points of interest data:
+(1) fire station; (2) Grocery Stores; (3) Supermarket; (4) Emergency Rooms; (5) Healthcare; (6) Hospitals; (7) Denominations; (8) Places Worship; (9) Religion; (10) College; (11) kindergarten; (12) libraries; (13)  public school; (14) private school; (15) school; (16) University
+
+```{r build-variable-df, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2018
+
+variable_df_2018 <- population_2018_df %>% dplyr::select(-"population.2018") %>%
+  full_join(male_pop_2018_df) %>% dplyr::select(-"male.population.2018") %>%
+  full_join(female_pop_2018_df) %>% dplyr::select(-"female.population.2018") %>%
+  full_join(disable_pop_2018_df) %>% dplyr::select(-"disable.population.2018") %>%
+  full_join(african_american_2018_df) %>% dplyr::select(-"african.american.2018") %>%
+  full_join(hispanic_2018_df) %>% dplyr::select(-"hispanic.2018") %>%
+  full_join(white_only_2018_df) %>% dplyr::select(-"white.only.2018") %>%
+  full_join(poverty_2018_df) %>% dplyr::select(-"poverty.2018") %>%
+  full_join(limit_education_attain_2018_df) %>% dplyr::select(-"limit.education.attain.2018") %>%
+  full_join(single_parent_family_2018_df) %>% dplyr::select(-"single.parent.family.2018") %>%
+  full_join(single_person_household_2018_df) %>% dplyr::select(-"single.person.household.2018") %>%
+  full_join(household_senior_2018_df) %>% dplyr::select(-"household.senior.2018") %>%
+  full_join(multifamily_housing_2018_df) %>% dplyr::select(-"multi.family.housing.2018") %>%
+  full_join(total_housing_units_2018_df) %>% dplyr::select(-"total.housing.units.2018") %>%
+  full_join(total_household_2018_df) %>% dplyr::select(-"total.household.2018") %>%
+  full_join(family_own_children_2018_df) %>% dplyr::select(-"family.own.children.2018") 
+
+acs_dasymetric_NLCD_2018 <- read_rds(file.path(data_dir ="/Users/hebowen/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/2018_NLCD_sfs_30", "ACS_dasymetric_NLCD_2018.Rds"))
+#population_2018_df <- acs_dasymetric_NLCD_2018$population_2018_df
+#male_pop_2018_df <- acs_dasymetric_NLCD_2018$male_pop_2018_df
+#female_pop_2018_df <- acs_dasymetric_NLCD_2018$female_pop_2018_df
+#disable_pop_2018_df <- acs_dasymetric_NLCD_2018$disable_pop_2018_df
+#african_american_2018_df <- acs_dasymetric_NLCD_2018$african_american_2018_df
+#hispanic_2018_df <- acs_dasymetric_NLCD_2018$hispanic_2018_df
+#white_only_2018_df <- acs_dasymetric_NLCD_2018$white_only_2018_df
+#family_own_children_2018_df <- acs_dasymetric_NLCD_2018$family_own_children_2018_df
+#total_household_2018_df <- acs_dasymetric_NLCD_2018$total_household_2018_df
+#single_parent_family_2018_df <- acs_dasymetric_NLCD_2018$single_parent_family_2018_df
+#total_housing_units_2018_df <- acs_dasymetric_NLCD_2018$total_housing_units_2018_df
+#single_person_household_2018_df <- acs_dasymetric_NLCD_2018$single_person_household_2018_df
+#multifamily_housing_2018_df <- acs_dasymetric_NLCD_2018$multifamily_housing_2018_df
+#household_senior_2018_df <- acs_dasymetric_NLCD_2018$household_senior_2018_df
+#poverty_2018_df <- acs_dasymetric_NLCD_2018$poverty_2018_df
+#limit_education_attain_2018_df <- acs_dasymetric_NLCD_2018$limit_education_attain_2018_df
+variable_df_2018 <- acs_dasymetric_NLCD_2018$variable_df_2018
+
+variable_df_2018 <- variable_df_2018 %>%
+  full_join(fire_station_2018_df) %>% dplyr::select(-"fire_station") %>%
+  full_join(grocery_stores_2018_df) %>% dplyr::select(-"grocery_stores") %>%
+  full_join(supermarket_2018_df) %>% dplyr::select(-"supermarket") %>%
+  full_join(emergency_2018_df) %>% dplyr::select(-"emergency") %>%
+  full_join(healthcare_2018_df) %>% dplyr::select(-"healthcare") %>%
+  full_join(hospital_2018_df) %>% dplyr::select(-"hospital") %>%
+  full_join(denomination_2018_df) %>% dplyr::select(-"denomination") %>%
+  full_join(worship_2018_df) %>% dplyr::select(-"worship") %>%
+  full_join(religion_2018_df) %>% dplyr::select(-"religion") %>%
+  full_join(college_2018_df) %>% dplyr::select(-"college") %>%
+  full_join(kindergarten_2018_df) %>% dplyr::select(-"kindergarten") %>%
+  full_join(libraries_2018_df) %>% dplyr::select(-"libraries") %>%
+  full_join(public_2018_df) %>% dplyr::select(-"public") %>%
+  full_join(private_2018_df) %>% dplyr::select(-"private") %>%
+  full_join(school_2018_df) %>% dplyr::select(-"school") %>%
+  full_join(university_2018_df) %>% dplyr::select(-"university")
+#---------------------custom spatial resolution-----------------------------
+variable_df_2018_nlcd <- population_2018_nlcd %>% dplyr::select(-"population.2018") %>%
+  full_join(male_pop_2018_nlcd) %>% dplyr::select(-"male.population.2018") %>%
+  full_join(female_pop_2018_nlcd) %>% dplyr::select(-"female.population.2018") %>%
+  full_join(disable_pop_2018_nlcd) %>% dplyr::select(-"disable.population.2018") %>%
+  full_join(african_american_2018_nlcd) %>% dplyr::select(-"african.american.2018") %>%
+  full_join(hispanic_2018_nlcd) %>% dplyr::select(-"hispanic.2018") %>%
+  full_join(white_only_2018_nlcd) %>% dplyr::select(-"white.only.2018") %>%
+  full_join(poverty_2018_nlcd) %>% dplyr::select(-"poverty.2018") %>%
+  full_join(limit_education_attain_2018_nlcd) %>% dplyr::select(-"limit.education.attain.2018") %>%
+  full_join(single_parent_family_2018_nlcd) %>% dplyr::select(-"single.parent.family.2018") %>%
+  full_join(single_person_household_2018_nlcd) %>% dplyr::select(-"single.person.household.2018") %>%
+  full_join(household_senior_2018_nlcd) %>% dplyr::select(-"household.senior.2018") %>%
+  full_join(multifamily_housing_2018_nlcd) %>% dplyr::select(-"multi.family.housing.2018") %>%
+  full_join(total_housing_units_2018_nlcd) %>% dplyr::select(-"total.housing.units.2018") %>%
+  full_join(total_household_2018_nlcd) %>% dplyr::select(-"total.household.2018") %>%
+  full_join(family_own_children_2018_nlcd) %>% dplyr::select(-"family.own.children.2018") 
+
+acs_dasymetric_nlcd_2018_150 <- read_rds(file.path(data_dir ="/Users/hebowen/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/2018_NLCD_sfs_150", "ACS_dasymetric_NLCD_2018_150.Rds"))
+variable_df_2018_nlcd <- acs_dasymetric_nlcd_2018_150$variable_df_2018_nlcd
+
+variable_df_2018_nlcd <- variable_df_2018_nlcd %>%
+  full_join(fire_station_2018_nlcd) %>% dplyr::select(-"fire_station") %>%
+  full_join(grocery_stores_2018_nlcd) %>% dplyr::select(-"grocery_stores") %>%
+  full_join(supermarket_2018_nlcd) %>% dplyr::select(-"supermarket") %>%
+  full_join(emergency_2018_nlcd) %>% dplyr::select(-"emergency") %>%
+  full_join(healthcare_2018_nlcd) %>% dplyr::select(-"healthcare") %>%
+  full_join(hospital_2018_nlcd) %>% dplyr::select(-"hospital") %>%
+  full_join(denomination_2018_nlcd) %>% dplyr::select(-"denomination") %>%
+  full_join(worship_2018_nlcd) %>% dplyr::select(-"worship") %>%
+  full_join(religion_2018_nlcd) %>% dplyr::select(-"religion") %>%
+  full_join(college_2018_nlcd) %>% dplyr::select(-"college") %>%
+  full_join(kindergarten_2018_nlcd) %>% dplyr::select(-"kindergarten") %>%
+  full_join(libraries_2018_nlcd) %>% dplyr::select(-"libraries") %>%
+  full_join(public_2018_nlcd) %>% dplyr::select(-"public") %>%
+  full_join(private_2018_nlcd) %>% dplyr::select(-"private") %>%
+  full_join(school_2018_nlcd) %>% dplyr::select(-"school") %>%
+  full_join(university_2018_nlcd) %>% dplyr::select(-"university")
+
+```
+
+## Write the dasymetric ACS data of the year of 2018 (#write-acs-data-2018)
+```{r write-acs-data-2018, include=FALSE, message=FALSE, warning=FALSE}
+
+ write_rds(list(population_2018_df = population_2018_df, male_pop_2018_df = male_pop_2018_df,
+                 female_pop_2018_df = female_pop_2018_df, disable_pop_2018_df = disable_pop_2018_df,
+                 african_american_2018_df = african_american_2018_df, hispanic_2018_df = hispanic_2018_df,
+                 white_only_2018_df = white_only_2018_df, family_own_children_2018_df = family_own_children_2018_df,
+                 total_household_2018_df = total_household_2018_df, single_parent_family_2018_df = single_parent_family_2018_df,
+                 total_housing_units_2018_df = total_housing_units_2018_df, single_person_household_2018_df = single_person_household_2018_df, 
+                 multifamily_housing_2018_df = multifamily_housing_2018_df, household_senior_2018_df = household_senior_2018_df, 
+                 poverty_2018_df = poverty_2018_df, limit_education_attain_2018_df = limit_education_attain_2018_df, variable_df_2018 = variable_df_2018),
+            path = file.path(data_dir ="/Users/hebowen/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/2018_NLCD_sfs_30", "ACS_dasymetric_NLCD_2018_30.Rds"))
+
+  write_rds(list(fire_station_2018_df = fire_station_2018_df, grocery_stores_2018_df = grocery_stores_2018_df, supermarket_2018_df = supermarket_2018_df, emergency_2018_df = emergency_2018_df,                          healthcare_2018_df = healthcare_2018_df, hospital_2018_df = hospital_2018_df, denomination_2018_df = denomination_2018_df, worship_2018_df = worship_2018_df,
+                 religion_2018_df = religion_2018_df, college_2018_df = college_2018_df, kindergarten_2018_df = kindergarten_2018_df,
+                 libraries_2018_df = libraries_2018_df, public_2018_df = public_2018_df, private_2018_df = private_2018_df, school_2018_df = school_2018_df, university_2018_df = university_2018_df),
+            path = file.path(data_dir ="/Users/hebowen/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/2018_NLCD_sfs_30", "facilities_dasymetric_NLCD_2018_30.Rds"))
+#----------------------------------------custom spatial resolution-----------------------------------------------
+  write_rds(list(population_2018_nlcd = population_2018_nlcd, male_pop_2018_nlcd = male_pop_2018_nlcd,
+                 female_pop_2018_nlcd = female_pop_2018_nlcd, disable_pop_2018_nlcd = disable_pop_2018_nlcd,
+                 african_american_2018_nlcd = african_american_2018_nlcd, hispanic_2018_nlcd = hispanic_2018_nlcd,
+                 white_only_2018_nlcd = white_only_2018_nlcd, family_own_children_2018_nlcd = family_own_children_2018_nlcd,
+                 total_household_2018_nlcd = total_household_2018_nlcd, single_parent_family_2018_nlcd = single_parent_family_2018_nlcd,
+                 total_housing_units_2018_nlcd = total_housing_units_2018_nlcd, single_person_household_2018_nlcd = single_person_household_2018_nlcd, 
+                 multifamily_housing_2018_nlcd = multifamily_housing_2018_nlcd, household_senior_2018_nlcd = household_senior_2018_nlcd, 
+                 poverty_2018_nlcd = poverty_2018_nlcd, limit_education_attain_2018_nlcd = limit_education_attain_2018_nlcd, variable_df_2018_nlcd = variable_df_2018_nlcd),
+            path = file.path(data_dir ="/Users/hebowen/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/2018_NLCD_sfs_150", "ACS_dasymetric_NLCD_2018_150.Rds"))
+ 
+  write_rds(list(fire_station_2018_nlcd = fire_station_2018_nlcd, grocery_stores_2018_nlcd = grocery_stores_2018_nlcd, supermarket_2018_nlcd = supermarket_2018_nlcd, emergency_2018_nlcd = emergency_2018_nlcd,                          healthcare_2018_nlcd = healthcare_2018_nlcd, hospital_2018_nlcd = hospital_2018_nlcd, denomination_2018_nlcd = denomination_2018_nlcd, worship_2018_nlcd = worship_2018_nlcd,
+                 religion_2018_nlcd = religion_2018_nlcd, college_2018_nlcd = college_2018_nlcd, kindergarten_2018_nlcd = kindergarten_2018_nlcd,
+                 libraries_2018_nlcd = libraries_2018_nlcd, public_2018_nlcd = public_2018_nlcd, private_2018_nlcd = private_2018_nlcd, school_2018_nlcd = school_2018_nlcd, university_2018_nlcd =     university_2018_nlcd),
+            path = file.path(data_dir ="/Users/hebowen/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/2018_NLCD_sfs_150", "facilities_dasymetric_NLCD_2018_150.Rds"))
+#write_rds(variable_df_2018 = variable_df_2018, path = file.path(data_dir ="/Users/hebowen/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/2018_NLCD_sfs_30", "dasymetric_NLCD_2018.Rds"))
+```
+
+## Perform the principal component analysis (#pca)
+
+Here, based on the variables dataframe, the principal component analysis (PCA) is performed to reduce the dimension of the variables dataframe. Kaiser criterion is used for component selection, and this can be aided by the examination of a scree plot.
+```{r pca, include=FALSE, message=FALSE, warning=FALSE}
+# year of 2010
+variable_pca_2010 <- prcomp(variable_df_2010 %>% dplyr::select(-"x", -"y"), center = TRUE, scale. = TRUE) 
+summary(variable_pca_2010)
+
+# year of 2018
+variable_pca_2018 <- prcomp(variable_df_2018 %>% dplyr::select(-"x", -"y"), center = TRUE, scale. = TRUE)  
+summary(variable_pca_2018)
+
+# plot the PCA chart
+# screeplot(variable_pca, npcs = length(variable_pca$sdev), type = "lines")
+
+pcaCharts <- function(x) {
+    x.var <- x$sdev ^ 2
+    x.pvar <- x.var/sum(x.var)
+    print("proportions of variance:")
+    print(x.pvar)
+    
+    par(mfrow=c(2,2))
+    plot(x.pvar,xlab="Principal component", ylab="Proportion of variance explained", ylim=c(0,1), type='b')
+    plot(cumsum(x.pvar),xlab="Principal component", ylab="Cumulative Proportion of variance explained", ylim=c(0,1), type='b')
+    screeplot(x)
+    screeplot(x,type="l")
+    par(mfrow=c(1,1))
+}
+
+
+# year of 2010
+pcaCharts(variable_pca_2010)
+
+# year of 2018
+pcaCharts(variable_pca_2018)
+
+# Plot the biplot
+
+library(devtools)
+install_github("vqv/ggbiplot")
+library(ggbiplot)
+
+# year of 2010
+ggbiplot(variable_pca_2010)
+
+# year of 2018
+ggbiplot(variable_pca_2018)
+#----------------------------------------custom spatial resolution-----------------------------------------------
+# year of 2018
+variable_pca_2018_nlcd <- prcomp(variable_df_2018_nlcd %>% dplyr::select(-"x", -"y"), center = TRUE, scale. = TRUE)  
+summary(variable_pca_2018_nlcd)
+
+```
+
+
+## Calculate the social fabric scores (#calc-score)
+
+Here, we calculate the social fabric scores based on the previous results of principal component analysis. For example, we choose the first 4 components to calculate the social fabric score.
+
+```{r calc-score, include=FALSE, message=FALSE, warning=FALSE}
+# Year of 2010
+variable_df_pca_2010 <- variable_df_2010 %>% dplyr::select("x", "y") %>%
+ cbind(data.frame(variable_pca_2010$x) %>% dplyr::select(PC1, PC2, PC3, PC4))
+
+pca_component_loading_2010 <- data.frame(variable_pca_2010$rotation) %>%
+  rownames_to_column("variable")
+
+# show the component loadings table
+pca_component_loading_2010 %>%
+gt() %>%
+  tab_header(title =md ("**Component Loadings**")) %>%
+  cols_label(variable = md("**Variable**"),PC1 = md("**PC1**"), PC2 = md("**PC2**"),  PC3 = md("**PC3**"), PC4 = md("**PC4**"), PC5 = md("**PC5**"), PC6 = md("**PC6**"), PC7 =  md("**PC7**"), PC8 = md("**PC8**"), PC9 =  md("**PC9**"), PC10 = md("**PC10**"), PC11 = md("**PC11**"), PC12 = md("**PC12**"), PC13 = md("**PC13**"))
+#-------------------------------------------------------------------------------------------------------
+# year of 2018
+variable_df_pca_2018 <- variable_df_2018 %>% dplyr::select("x", "y") %>%
+ cbind(data.frame(variable_pca_2018$x) %>% dplyr::select(PC1, PC2, PC3, PC4))
+
+pca_component_loading_2018 <- data.frame(variable_pca_2018$rotation) %>%
+  rownames_to_column("variable")
+
+# show the component loadings table
+pca_component_loading_2018 %>%
+gt() %>%
+  tab_header(title =md ("**Component Loadings**")) %>%
+  cols_label(variable = md("**Variable**"),PC1 = md("**PC1**"), PC2 = md("**PC2**"),  PC3 = md("**PC3**"), PC4 = md("**PC4**"), PC5 = md("**PC5**"), PC6 = md("**PC6**"), PC7 =  md("**PC7**"), PC8 = md("**PC8**"), PC9 =  md("**PC9**"), PC10 = md("**PC10**"), PC11 = md("**PC11**"), PC12 = md("**PC12**"), PC13 = md("**PC13**"))
+#----------------------------------------custom spatial resolution-----------------------------------------------
+variable_df_pca_2018_nlcd <- variable_df_2018_nlcd %>% dplyr::select("x", "y") %>%
+ cbind(data.frame(variable_pca_2018_nlcd$x) %>% dplyr::select(PC1, PC2, PC3, PC4))
+
+```
+
+### Mapping the social fabric score/index (#map-score)
+
+score = PC1 + PC2 + PC3 + PC4
+```{r map-score-2010, include=FALSE, message=FALSE, warning=FALSE}
+
+variable_df_pca_2010 <- variable_df_pca_2010 %>%
+  mutate(score = PC1 + PC2 + PC3 + PC4)
+sfs_2010 <- rasterFromXYZ(variable_df_pca_2010)  #Convert first two columns as lon-lat and third as value                
+ plot(sfs_2010)
+ 
+ writeRaster(sfs_2010, filename="sfs_2010.tif", format = "GTiff", overwrite=TRUE)
+```
+
+score = PC1 + PC2 + PC3 + PC4
+```{r map-score-2018, include=FALSE, message=FALSE, warning=FALSE}
+
+variable_df_pca_2018 <- variable_df_pca_2018 %>%
+  mutate(score = PC1 + PC2 + PC3 + PC4)
+
+sfs_2018 <- rasterFromXYZ(variable_df_pca_2018)  #Convert first two columns as lon-lat and third as value                
+ plot(sfs_2018)
+ 
+score_2018 <- rasterFromXYZ(variable_df_pca_2018 %>% dplyr::select(-'PC1', -'PC2', -'PC3', -'PC4'))
+plot(score_2018)
+
+#write_rds(variable_df_pca_2018 = variable_df_pca_2018, path = file.path(data_dir ="/Users/hebowen/Desktop/MarTREC-project/Data/2018_Data/2018_NLCD_summary/2018_NLCD_sfs_30", "variable_df_pca_2018.Rds"))
+writeRaster(score_2018, filename="score_2018_30.tif", format = "GTiff", overwrite=TRUE)
+writeRaster(sfs_2018, filename="sfs_2018_30.tif", format = "GTiff", overwrite=TRUE)
+
+score_2018 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/2018_NLCD_sfs_30/score_2018_30.tif')
+
+score_2018_30_shp <- st_as_stars(score_2018) 
+#census_tract_grid_150$population.2018[is.na(census_tract_grid_150$population.2018)] <- 0
+score_2018_30_shp <- st_as_sf(score_2018_30_shp, as_points = FALSE, merge = FALSE) %>%
+  mutate(grid_area = st_area(.), grid_id = 1:nrow(.)) 
+
+st_write(score_2018_30_shp, dsn = "/Users/hebowen/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/2018_NLCD_sfs_30", layer = "score_2018_30_shp",
+         driver = "ESRI Shapefile", append = FALSE)
+#----------------------------------------custom spatial resolution-----------------------------------------------
+variable_df_pca_2018_nlcd <- variable_df_pca_2018_nlcd %>%
+  mutate(score = PC1 + PC2 + PC3 + PC4)
+
+sfs_2018_nlcd <- rasterFromXYZ(variable_df_pca_2018_nlcd)  #Convert first two columns as lon-lat and third as value                
+ plot(sfs_2018_nlcd)
+ 
+ score_2018_nlcd <- rasterFromXYZ(variable_df_pca_2018_nlcd %>% dplyr::select(-'PC1', -'PC2', -'PC3', -'PC4'))
+ plot(score_2018_nlcd)
+
+ writeRaster(score_2018_nlcd, filename="score_2018_150.tif", format = "GTiff", overwrite=TRUE)
+ writeRaster(sfs_2018_nlcd, filename="sfs_2018_150.tif", format = "GTiff", overwrite=TRUE)
+ #writeRaster(sfs_2018_nlcd, filename='sfs_2018_150.tif', format="raster")
+ 
+score_2018_150 <- raster('~/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/2018_NLCD_sfs_150/score_2018_150.tif')
+
+score_2018_150_shp <- st_as_stars(score_2018_150) 
+#census_tract_grid_150$population.2018[is.na(census_tract_grid_150$population.2018)] <- 0
+score_2018_150_shp <- st_as_sf(score_2018_150_shp, as_points = FALSE, merge = FALSE) %>%
+  mutate(grid_area = st_area(.), grid_id = 1:nrow(.)) 
+
+st_write(score_2018_150_shp, dsn = "/Users/hebowen/Desktop/MarTREC_project/Data/2018_Data/2018_NLCD_summary/2018_NLCD_sfs_150", layer = "score_2018_150_shp",
+         driver = "ESRI Shapefile", append = FALSE)
+```
+
+
+
+
